@@ -18,9 +18,6 @@
 #include "VMFactory.h"
 #include "EVMC.h"
 #include "LegacyVM.h"
-
-#include <libaleth-interpreter/interpreter.h>
-
 #include <evmc/loader.h>
 
 namespace po = boost::program_options;
@@ -101,8 +98,10 @@ void setVMKind(const std::string& _name)
 
     g_evmcDll.reset(new EVMC{instance});
 
+    /*
     cnote << "Loaded EVMC module: " << g_evmcDll->name() << " " << g_evmcDll->version() << " ("
           << _name << ")";
+    */
 }
 }  // namespace
 
@@ -186,8 +185,10 @@ VMPtr VMFactory::create(VMKind _kind)
 
     switch (_kind)
     {
+    /*
     case VMKind::Interpreter:
         return {new EVMC{evmc_create_interpreter()}, default_delete};
+    */
     case VMKind::DLL:
         assert(g_evmcDll != nullptr);
         // Return "fake" owning pointer to global EVMC DLL VM.

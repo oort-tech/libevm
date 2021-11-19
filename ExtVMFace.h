@@ -19,20 +19,27 @@
 
 #include "Instruction.h"
 
-#include <libethcore/BlockHeader.h>
-#include <libethcore/ChainOperationParams.h>
-#include <libethcore/Common.h>
-#include <libethcore/LogEntry.h>
+#include <mcp/lib/numbers.hpp>
+#include <mcp/lib/EVMSchedule.h>
+#include <mcp/lib/LogEntry.h>
+#include <mcp/node/utility.hpp>
+#include <mcp/db/database.hpp>
 #include <libdevcore/Common.h>
 #include <libdevcore/CommonData.h>
 #include <libdevcore/SHA3.h>
 
-#include <evmc/evmc.h>
-#include <evmc/helpers.h>
+#include <evmc/include/evmc/evmc.h>
 
 #include <boost/optional.hpp>
 #include <functional>
 #include <set>
+
+namespace mcp
+{
+    class node;
+    class ledger;
+    class iblock_cache;
+}
 
 namespace dev
 {
@@ -88,9 +95,9 @@ private:
 
 struct SubState
 {
-    std::set<Address> suicides;  ///< Any accounts that have suicided.
-    LogEntries logs;             ///< Any logs.
-    int64_t refunds = 0;         ///< Refund counter for storage changes.
+    std::set<mcp::account> suicides;    ///< Any accounts that have suicided.
+    LogEntries logs;            ///< Any logs.
+    u256 refunds;                ///< Refund counter of SSTORE nonzero->zero.
 
     SubState& operator+=(SubState const& _s)
     {
@@ -118,9 +125,9 @@ struct CallParameters
 {
     CallParameters() = default;
     CallParameters(
-        Address _senderAddress,
-        Address _codeAddress,
-        Address _receiveAddress,
+        mcp::account _senderAddress,
+        mcp::account _codeAddress,
+        mcp::account _receiveAddress,
         u256 _valueTransfer,
         u256 _apparentValue,
         u256 _gas,
@@ -128,9 +135,9 @@ struct CallParameters
         OnOpFunc _onOpFunc
     ):    senderAddress(_senderAddress), codeAddress(_codeAddress), receiveAddress(_receiveAddress),
         valueTransfer(_valueTransfer), apparentValue(_apparentValue), gas(_gas), data(_data), onOp(_onOpFunc)  {}
-    Address senderAddress;
-    Address codeAddress;
-    Address receiveAddress;
+    mcp::account senderAddress;
+    mcp::account codeAddress;
+    mcp::account receiveAddress;
     u256 valueTransfer;
     u256 apparentValue;
     u256 gas;
@@ -142,32 +149,21 @@ struct CallParameters
 class EnvInfo
 {
 public:
-    EnvInfo(BlockHeader const& _current, LastBlockHashesFace const& _lh, u256 const& _gasUsed):
-        m_headerInfo(_current),
-        m_lastHashes(_lh),
-        m_gasUsed(_gasUsed)
-    {}
-    // Constructor with custom gasLimit - used in some synthetic scenarios like eth_estimateGas    RPC method
-    EnvInfo(BlockHeader const& _current, LastBlockHashesFace const& _lh, u256 const& _gasUsed, u256 const& _gasLimit):
-        EnvInfo(_current, _lh, _gasUsed)
-    {
-        m_headerInfo.setGasLimit(_gasLimit);
-    }
+    EnvInfo(mcp::db::db_transaction & transaction_a, mcp::node & node_a, std::shared_ptr<mcp::iblock_cache> cache_a)
+    : transaction(transaction_a),node(node_a),cache(cache_a)
+    {};
 
-    BlockHeader const& header() const { return m_headerInfo;  }
+    mcp::db::db_transaction & transaction;
+    mcp::node &node;
+    std::shared_ptr<mcp::iblock_cache> cache;
 
-    int64_t number() const { return m_headerInfo.number(); }
-    Address const& author() const { return m_headerInfo.author(); }
-    int64_t timestamp() const { return m_headerInfo.timestamp(); }
-    u256 const& difficulty() const { return m_headerInfo.difficulty(); }
-    u256 const& gasLimit() const { return m_headerInfo.gasLimit(); }
-    LastBlockHashesFace const& lastHashes() const { return m_lastHashes; }
-    u256 const& gasUsed() const { return m_gasUsed; }
-
-private:
-    BlockHeader m_headerInfo;
-    LastBlockHashesFace const& m_lastHashes;
-    u256 m_gasUsed;
+    int64_t number() const { return 0; }
+    mcp::account const& author() const { return 0; }
+    int64_t timestamp() const { return 0; }
+    u256 const& difficulty() const { return 0; }
+    u256 const& gasLimit() const { return 0; }
+    // LastBlockHashesFace const& lastHashes() const { return 0; }
+     u256 const& gasUsed() const { return 0; }
 };
 
 /// Represents a call result.
@@ -190,9 +186,9 @@ struct CreateResult
 {
     evmc_status_code status;
     owning_bytes_ref output;
-    h160 address;
+    mcp::account address;
 
-    CreateResult(evmc_status_code status, owning_bytes_ref&& output, h160 const& address)
+    CreateResult(evmc_status_code status, owning_bytes_ref&& output, mcp::account const& address)
         : status{status}, output{std::move(output)}, address{address}
     {}
 };
@@ -204,7 +200,7 @@ class ExtVMFace: public evmc_context
 {
 public:
     /// Full constructor.
-    ExtVMFace(EnvInfo const& _envInfo, Address _myAddress, Address _caller, Address _origin,
+    ExtVMFace(EnvInfo const& _envInfo, mcp::account _myAddress, mcp::account _caller, mcp::account _origin,
         u256 _value, u256 _gasPrice, bytesConstRef _data, bytes _code, h256 const& _codeHash,
         unsigned _depth, bool _isCreate, bool _staticCall);
 
@@ -223,22 +219,22 @@ public:
     virtual u256 originalStorageValue(u256 const&) { return 0; }
 
     /// Read address's balance.
-    virtual u256 balance(Address) { return 0; }
+    virtual u256 balance(mcp::account) { return 0; }
 
     /// Read address's code.
-    virtual bytes const& codeAt(Address) { return NullBytes; }
+    virtual bytes const& codeAt(mcp::account) { return NullBytes; }
 
     /// @returns the size of the code in bytes at the given address.
-    virtual size_t codeSizeAt(Address) { return 0; }
+    virtual size_t codeSizeAt(mcp::account) { return 0; }
 
     /// @returns the hash of the code at the given address.
-    virtual h256 codeHashAt(Address) { return h256{}; }
+    virtual h256 codeHashAt(mcp::account) { return h256{}; }
 
     /// Does the account exist?
-    virtual bool exists(Address) { return false; }
+    virtual bool exists(mcp::account) { return false; }
 
     /// Suicide the associated contract and give proceeds to the given address.
-    virtual void suicide(Address) { sub.suicides.insert(myAddress); }
+    virtual void suicide(mcp::account) { sub.suicides.insert(myAddress); }
 
     /// Create a new (contract) account.
     virtual CreateResult create(u256, u256&, bytesConstRef, Instruction, u256, OnOpFunc const&) = 0;
@@ -256,16 +252,16 @@ public:
     EnvInfo const& envInfo() const { return m_envInfo; }
 
     /// Return the EVM gas-price schedule for this execution context.
-    virtual EVMSchedule const& evmSchedule() const { return DefaultSchedule; }
+    virtual EVMSchedule const& evmSchedule() const { return ConstantinopleFixSchedule; }
 
 private:
     EnvInfo const& m_envInfo;
 
 public:
     // TODO: make private
-    Address myAddress;  ///< Address associated with executing code (a contract, or contract-to-be).
-    Address caller;     ///< Address which sent the message (either equal to origin or a contract).
-    Address origin;     ///< Original transactor.
+    mcp::account myAddress;  ///< Address associated with executing code (a contract, or contract-to-be).
+    mcp::account caller;     ///< Address which sent the message (either equal to origin or a contract).
+    mcp::account origin;     ///< Original transactor.
     u256 value;         ///< Value (in Wei) that was passed to this address.
     u256 gasPrice;      ///< Price of gas (that we already paid).
     bytesConstRef data;       ///< Current input data.
@@ -278,7 +274,7 @@ public:
     bool staticCall = false;  ///< Throw on state changing.
 };
 
-inline evmc_address toEvmC(Address const& _addr)
+inline evmc_address toEvmC(mcp::account const& _addr)
 {
     return reinterpret_cast<evmc_address const&>(_addr);
 }
@@ -293,9 +289,9 @@ inline u256 fromEvmC(evmc_uint256be const& _n)
     return fromBigEndian<u256>(_n.bytes);
 }
 
-inline Address fromEvmC(evmc_address const& _addr)
+inline mcp::account fromEvmC(evmc_address const& _addr)
 {
-    return reinterpret_cast<Address const&>(_addr);
+    return reinterpret_cast<mcp::account const&>(_addr);
 }
 }
 }

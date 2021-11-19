@@ -332,7 +332,7 @@ void LegacyVM::interpretCases()
                 throwDisallowedStateChange();
 
             m_runGas = toInt63(m_schedule->suicideGas);
-            Address dest = asAddress(m_SP[0]);
+            mcp::account dest = asAddress(m_SP[0]);
 
             // After EIP158 zero-value suicides do not have to pay account creation gas.
             if (m_ext->balance(m_ext->myAddress) > 0 || m_schedule->zeroValueTransferChargesNewAccountGas())
@@ -1369,7 +1369,7 @@ void LegacyVM::interpretCases()
             updateMem(memNeed(m_SP[1], m_SP[3]));
             updateIOGas();
 
-            Address a = asAddress(m_SP[0]);
+            mcp::account a = asAddress(m_SP[0]);
             copyDataToMemory(&m_ext->codeAt(a), m_SP + 1);
         }
         NEXT
@@ -1399,7 +1399,7 @@ void LegacyVM::interpretCases()
             ON_OP();
             updateIOGas();
 
-            m_SPP[0] = (u160)m_ext->envInfo().author();
+            m_SPP[0] = (u256)m_ext->envInfo().author().number();
         }
         NEXT
 
