@@ -226,13 +226,13 @@ namespace dev
         &&EXTCODECOPY,                          \
         &&RETURNDATASIZE,                       \
         &&RETURNDATACOPY,                       \
-        &&EXTCODEHASH,                         \
-        &&BLOCKHASH, /* 40, */                  \
-        &&COINBASE,                             \
+        &&EXTCODEHASH,                          \
+        &&MCBLOCKHASH, /* 40, */                \
+		&&INVALID,	/* &&COINBASE, \*/			\
         &&TIMESTAMP,                            \
-        &&NUMBER,                               \
-        &&DIFFICULTY,                           \
-        &&GASLIMIT,                             \
+        &&MCI,                                  \
+		&&INVALID,	/* &&DIFFICULTY, \*/		\
+		&&INVALID,	/* &&GASLIMIT, \*/			\
         &&INVALID,                              \
         &&INVALID,                              \
         &&INVALID,                              \

@@ -170,19 +170,19 @@ evmc_tx_context getTxContext(evmc_context* _context) noexcept
     evmc_tx_context result = {};
     result.tx_gas_price = toEvmC(h256(env.gasPrice));
     result.tx_origin = toEvmC(env.origin);
-    result.block_coinbase = toEvmC(env.envInfo().author());
-    result.block_number = static_cast<int64_t>(env.envInfo().number());
+    //result.block_coinbase = toEvmC(env.envInfo().author());
+    //result.block_number = static_cast<int64_t>(env.envInfo().number());
     result.block_timestamp = static_cast<int64_t>(env.envInfo().timestamp());
-    result.block_gas_limit = static_cast<int64_t>(env.envInfo().gasLimit());
-    result.block_difficulty = toEvmC(h256(env.envInfo().difficulty()));
+    //result.block_gas_limit = static_cast<int64_t>(env.envInfo().gasLimit());
+    //result.block_difficulty = toEvmC(h256(env.envInfo().difficulty()));
     return result;
 }
 
-evmc_bytes32 getBlockHash(evmc_context* _envPtr, int64_t _number)
-{
-    auto& env = static_cast<ExtVMFace&>(*_envPtr);
-    return toEvmC(env.blockHash(_number));
-}
+//evmc_bytes32 getBlockHash(evmc_context* _envPtr, int64_t _number)
+//{
+//    auto& env = static_cast<ExtVMFace&>(*_envPtr);
+//    return toEvmC(env.blockHash(_number));
+//}
 
 evmc_result create(ExtVMFace& _env, evmc_message const* _msg) noexcept
 {
@@ -291,7 +291,7 @@ evmc_host_interface const hostInterface = {
     selfdestruct,
     eth::call,
     getTxContext,
-    getBlockHash,
+    //getBlockHash,
     eth::log,
 };
 }
@@ -299,7 +299,8 @@ evmc_host_interface const hostInterface = {
 ExtVMFace::ExtVMFace(EnvInfo const& _envInfo, mcp::account _myAddress, mcp::account _caller, mcp::account _origin,
     u256 _value, u256 _gasPrice, bytesConstRef _data, bytes _code, h256 const& _codeHash,
     unsigned _depth, bool _isCreate, bool _staticCall)
-  : evmc_context{&hostInterface},
+  : 
+	/*evmc_context{&hostInterface},*/
     m_envInfo(_envInfo),
     myAddress(_myAddress),
     caller(_caller),

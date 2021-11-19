@@ -1384,24 +1384,24 @@ void LegacyVM::interpretCases()
         }
         NEXT
 
-        CASE(BLOCKHASH)
+        CASE(MCBLOCKHASH)
         {
             ON_OP();
             m_runGas = toInt63(m_schedule->blockhashGas);
             updateIOGas();
 
-            m_SPP[0] = (u256)m_ext->blockHash(m_SP[0]);
+            m_SPP[0] = (u256)m_ext->mcBlockHash(m_SP[0]);
         }
         NEXT
 
-        CASE(COINBASE)
-        {
-            ON_OP();
-            updateIOGas();
+        //CASE(COINBASE)
+        //{
+        //    ON_OP();
+        //    updateIOGas();
 
-            m_SPP[0] = (u256)m_ext->envInfo().author().number();
-        }
-        NEXT
+        //    m_SPP[0] = (u256)m_ext->envInfo().author().number();
+        //}
+        //NEXT
 
         CASE(TIMESTAMP)
         {
@@ -1412,32 +1412,32 @@ void LegacyVM::interpretCases()
         }
         NEXT
 
-        CASE(NUMBER)
+        CASE(MCI)
         {
             ON_OP();
             updateIOGas();
 
-            m_SPP[0] = m_ext->envInfo().number();
+            m_SPP[0] = m_ext->envInfo().mci();
         }
         NEXT
 
-        CASE(DIFFICULTY)
-        {
-            ON_OP();
-            updateIOGas();
+        //CASE(DIFFICULTY)
+        //{
+        //    ON_OP();
+        //    updateIOGas();
 
-            m_SPP[0] = m_ext->envInfo().difficulty();
-        }
-        NEXT
+        //    m_SPP[0] = m_ext->envInfo().difficulty();
+        //}
+        //NEXT
 
-        CASE(GASLIMIT)
-        {
-            ON_OP();
-            updateIOGas();
+        //CASE(GASLIMIT)
+        //{
+        //    ON_OP();
+        //    updateIOGas();
 
-            m_SPP[0] = m_ext->envInfo().gasLimit();
-        }
-        NEXT
+        //    m_SPP[0] = m_ext->envInfo().gasLimit();
+        //}
+        //NEXT
 
         CASE(POP)
         {

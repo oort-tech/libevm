@@ -146,24 +146,38 @@ struct CallParameters
     OnOpFunc onOp;
 };
 
+
+class McInfo
+{
+public:
+	McInfo() = default;
+	McInfo(uint64_t const & mci_a, uint64_t const & mc_timestamp_a) :
+		mci(mci_a),
+		mc_timestamp(mc_timestamp_a)
+	{
+	};
+
+	uint64_t mci;
+	uint64_t mc_timestamp;
+};
+
+
 class EnvInfo
 {
 public:
-    EnvInfo(mcp::db::db_transaction & transaction_a, mcp::node & node_a, std::shared_ptr<mcp::iblock_cache> cache_a)
-    : transaction(transaction_a),node(node_a),cache(cache_a)
+    EnvInfo(mcp::db::db_transaction & transaction_a, mcp::node & node_a, std::shared_ptr<mcp::iblock_cache> cache_a, McInfo const & mci_info_a)
+    :transaction(transaction_a),node(node_a),cache(cache_a), m_mci_info(mci_info_a)
     {};
 
     mcp::db::db_transaction & transaction;
     mcp::node &node;
     std::shared_ptr<mcp::iblock_cache> cache;
 
-    int64_t number() const { return 0; }
-    mcp::account const& author() const { return 0; }
-    int64_t timestamp() const { return 0; }
-    u256 const& difficulty() const { return 0; }
-    u256 const& gasLimit() const { return 0; }
-    // LastBlockHashesFace const& lastHashes() const { return 0; }
-     u256 const& gasUsed() const { return 0; }
+    uint64_t mci() const { return m_mci_info.mci; }
+    uint64_t timestamp() const { return m_mci_info.mc_timestamp; }
+
+private:
+	McInfo m_mci_info;
 };
 
 /// Represents a call result.
@@ -245,8 +259,7 @@ public:
     /// Revert any changes made (by any of the other calls).
     virtual void log(h256s&& _topics, bytesConstRef _data) { sub.logs.push_back(LogEntry(myAddress, std::move(_topics), _data.toBytes())); }
 
-    /// Hash of a block if within the last 256 blocks, or h256() otherwise.
-    virtual h256 blockHash(u256 _number) = 0;
+    virtual h256 mcBlockHash(h256 mci_a) = 0;
 
     /// Get the execution environment information.
     EnvInfo const& envInfo() const { return m_envInfo; }
