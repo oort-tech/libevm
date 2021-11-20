@@ -97,7 +97,7 @@ struct SubState
 {
     std::set<mcp::account> suicides;    ///< Any accounts that have suicided.
     LogEntries logs;            ///< Any logs.
-    u256 refunds;                ///< Refund counter of SSTORE nonzero->zero.
+    int64_t refunds = 0;        ///< Refund counter of SSTORE nonzero->zero.
 
     SubState& operator+=(SubState const& _s)
     {
