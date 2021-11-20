@@ -139,7 +139,7 @@ void LegacyVM::caseCreate()
     // Clear the return data buffer. This will not free the memory.
     m_returnData.clear();
 
-    if (m_ext->balance(m_ext->myAddress) >= endowment && m_ext->depth < 1024)
+    if (m_ext->balance(m_ext->myAddress) >= endowment && m_ext->depth <= 1024)
     {
         *m_io_gas_p = m_io_gas;
         u256 createGas = *m_io_gas_p;
@@ -267,7 +267,7 @@ bool LegacyVM::caseCallSetup(CallParameters *callParams, bytesRef& o_output)
     uint64_t outOff = (uint64_t)outputOffset;
     uint64_t outSize = (uint64_t)outputSize;
 
-    if (m_ext->balance(m_ext->myAddress) >= callParams->valueTransfer && m_ext->depth < 1024)
+    if (m_ext->balance(m_ext->myAddress) >= callParams->valueTransfer && m_ext->depth <= 1024)
     {
         callParams->onOp = m_onOp;
         callParams->senderAddress = m_OP == Instruction::DELEGATECALL ? m_ext->caller : m_ext->myAddress;
