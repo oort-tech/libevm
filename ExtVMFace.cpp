@@ -172,7 +172,7 @@ evmc_tx_context getTxContext(evmc_context* _context) noexcept
     result.tx_origin = toEvmC(env.origin);
     //result.block_coinbase = toEvmC(env.envInfo().author());
     //result.block_number = static_cast<int64_t>(env.envInfo().number());
-    result.block_timestamp = static_cast<int64_t>(env.envInfo().timestamp());
+    result.block_timestamp = static_cast<int64_t>(env.envInfo().mc_timestamp());
     //result.block_gas_limit = static_cast<int64_t>(env.envInfo().gasLimit());
     //result.block_difficulty = toEvmC(h256(env.envInfo().difficulty()));
     return result;

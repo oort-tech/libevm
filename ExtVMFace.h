@@ -152,14 +152,16 @@ class McInfo
 {
 public:
 	McInfo() = default;
-	McInfo(uint64_t const & mci_a, uint64_t const & mc_timestamp_a) :
+	McInfo(uint64_t const & mci_a, uint64_t const & mc_timestamp_a, uint64_t const & mc_last_summary_mci_a) :
 		mci(mci_a),
-		mc_timestamp(mc_timestamp_a)
+		mc_timestamp(mc_timestamp_a),
+		mc_last_summary_mci(mc_last_summary_mci_a)
 	{
 	};
 
 	uint64_t mci;
 	uint64_t mc_timestamp;
+	uint64_t mc_last_summary_mci;
 };
 
 
@@ -175,7 +177,8 @@ public:
     std::shared_ptr<mcp::iblock_cache> cache;
 
     uint64_t mci() const { return m_mci_info.mci; }
-    uint64_t timestamp() const { return m_mci_info.mc_timestamp; }
+    uint64_t mc_timestamp() const { return m_mci_info.mc_timestamp; }
+    uint64_t mc_last_summary_mci() const { return m_mci_info.mc_last_summary_mci; }
 
 private:
 	McInfo m_mci_info;
