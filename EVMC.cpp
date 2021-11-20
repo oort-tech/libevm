@@ -57,7 +57,7 @@ EVMC::EVMC(evmc_instance* _instance) noexcept : evmc::vm(_instance)
 
 owning_bytes_ref EVMC::exec(u256& io_gas, ExtVMFace& _ext, const OnOpFunc& _onOp)
 {
-    assert(_ext.envInfo().number() >= 0);
+    // assert(_ext.envInfo().number() >= 0);
     assert(_ext.envInfo().timestamp() >= 0);
 
     constexpr int64_t int64max = std::numeric_limits<int64_t>::max();
