@@ -131,6 +131,7 @@ private:
     int64_t verifyJumpDest(u256 const& _dest, bool _throw = true);
 
     void onOperation();
+    void onFail();
     void adjustStack(unsigned _removed, unsigned _added);
     uint64_t gasForMem(u512 const& _size);
     void updateSSGas();
