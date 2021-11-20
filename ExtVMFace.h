@@ -19,16 +19,17 @@
 
 #include "Instruction.h"
 
-#include <mcp/lib/numbers.hpp>
-#include <mcp/lib/EVMSchedule.h>
-#include <mcp/lib/LogEntry.h>
-#include <mcp/node/utility.hpp>
+#include <mcp/common/numbers.hpp>
+#include <mcp/common/EVMSchedule.h>
+#include <mcp/common/utility.hpp>
 #include <mcp/db/database.hpp>
 #include <libdevcore/Common.h>
 #include <libdevcore/CommonData.h>
 #include <libdevcore/SHA3.h>
 
 #include <evmc/include/evmc/evmc.h>
+#include <mcp/core/block_store.hpp>
+#include <mcp/core/log_entry.hpp>
 
 #include <boost/optional.hpp>
 #include <functional>
@@ -36,8 +37,6 @@
 
 namespace mcp
 {
-    class node;
-    class ledger;
     class iblock_cache;
 }
 
@@ -96,7 +95,7 @@ private:
 struct SubState
 {
     std::set<mcp::account> suicides;    ///< Any accounts that have suicided.
-    LogEntries logs;            ///< Any logs.
+    mcp::log_entries logs;      ///< Any logs.
     int64_t refunds = 0;        ///< Refund counter of SSTORE nonzero->zero.
 
     SubState& operator+=(SubState const& _s)
@@ -168,12 +167,12 @@ public:
 class EnvInfo
 {
 public:
-    EnvInfo(mcp::db::db_transaction & transaction_a, mcp::node & node_a, std::shared_ptr<mcp::iblock_cache> cache_a, McInfo const & mci_info_a)
-    :transaction(transaction_a),node(node_a),cache(cache_a), m_mci_info(mci_info_a)
+    EnvInfo(mcp::db::db_transaction & transaction_a, mcp::block_store & store_a, std::shared_ptr<mcp::iblock_cache> cache_a, McInfo const & mci_info_a)
+    :transaction(transaction_a), store(store_a),cache(cache_a), m_mci_info(mci_info_a)
     {};
 
     mcp::db::db_transaction & transaction;
-    mcp::node &node;
+    mcp::block_store& store;
     std::shared_ptr<mcp::iblock_cache> cache;
 
     uint64_t mci() const { return m_mci_info.mci; }
@@ -261,7 +260,7 @@ public:
     virtual CallResult call(CallParameters&) = 0;
 
     /// Revert any changes made (by any of the other calls).
-    virtual void log(h256s&& _topics, bytesConstRef _data) { sub.logs.push_back(LogEntry(myAddress, std::move(_topics), _data.toBytes())); }
+    virtual void log(h256s&& _topics, bytesConstRef _data) { sub.logs.push_back(mcp::log_entry(myAddress, std::move(_topics), _data.toBytes())); }
 
     virtual h256 mcBlockHash(h256 mci_a) = 0;
 
