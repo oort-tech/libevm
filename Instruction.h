@@ -77,8 +77,8 @@ enum class Instruction : uint8_t
 
 	MCBLOCKHASH = 0x40,  ///< get hash of most recent complete block
     //COINBASE,          ///< get the block's coinbase address
-    TIMESTAMP,         ///< get the block's timestamp
-    MCI,            ///< get the block's number
+    TIMESTAMP = 0x42,    ///< get the block's timestamp
+    MCI = 0x43,          ///< get the block's number
     //DIFFICULTY,        ///< get the block's difficulty
     //GASLIMIT,          ///< get the block's gas limit
 
