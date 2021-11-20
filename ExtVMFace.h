@@ -143,6 +143,7 @@ struct CallParameters
     u256 gas;
     bytesConstRef data;
     bool staticCall = false;
+    std::shared_ptr<Instruction> op;
     OnOpFunc onOp;
 };
 

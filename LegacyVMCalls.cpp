@@ -204,6 +204,8 @@ bool LegacyVM::caseCallSetup(CallParameters *callParams, bytesRef& o_output)
     assert(callParams->valueTransfer == 0);
     assert(callParams->apparentValue == 0);
 
+    callParams->op = std::make_shared<Instruction>(m_OP);
+
     m_runGas = toInt63(m_schedule->callGas);
 
     callParams->staticCall = (m_OP == Instruction::STATICCALL || m_ext->staticCall);

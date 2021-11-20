@@ -73,6 +73,15 @@ uint64_t LegacyVM::decodeJumpvDest(const byte* const _code, uint64_t& _pc, byte 
 //
 void LegacyVM::onOperation()
 {
+    //auto op_info(instructionInfo(m_OP));
+    //std::stringstream ss;
+    //ss << m_PC << " " << op_info.name << " ";
+    //for (int i = 0; i < op_info.args; i++)
+    //{
+    //	ss << h256(m_SP[i]).hex() << " ";
+    //}
+    //BOOST_LOG_TRIVIAL(info) << ss.str() << std::endl;
+
     if (m_onOp)
         (m_onOp)(++m_nSteps, m_PC, m_OP,
             m_newMemSize > m_mem.size() ? (m_newMemSize - m_mem.size()) / 32 : uint64_t(0),
