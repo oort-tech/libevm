@@ -225,7 +225,12 @@ void LegacyVM::fetchInstruction()
     adjustStack(metric.args, metric.ret);
 
     // FEES...
-    m_runGas = toInt63(m_schedule->tierStepGas[static_cast<unsigned>(metric.gasPriceTier)]);
+	if (metric.gasPriceTier != Tier::Invalid) {
+		m_runGas = toInt63(m_schedule->tierStepGas[static_cast<unsigned>(metric.gasPriceTier)]);
+	}
+	else {
+		m_runGas = 0;
+	}
     m_newMemSize = m_mem.size();
     m_copyMemSize = 0;
 }
