@@ -229,7 +229,7 @@ void LegacyVM::fetchInstruction()
 		m_runGas = toInt63(m_schedule->tierStepGas[static_cast<unsigned>(metric.gasPriceTier)]);
 	}
 	else {
-		m_runGas = 20;
+		m_runGas = 0;
 	}
     m_newMemSize = m_mem.size();
     m_copyMemSize = 0;
