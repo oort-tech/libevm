@@ -10,8 +10,8 @@ namespace dev
 {
 namespace eth
 {
-static_assert(sizeof(Address) == sizeof(evmc_address), "Address types size mismatch");
-static_assert(alignof(Address) == alignof(evmc_address), "Address types alignment mismatch");
+static_assert(sizeof(mcp::account) == sizeof(evmc_address), "Address types size mismatch");
+static_assert(alignof(mcp::account) == alignof(evmc_address), "Address types alignment mismatch");
 static_assert(sizeof(h256) == sizeof(evmc_uint256be), "Hash types size mismatch");
 static_assert(alignof(h256) == alignof(evmc_uint256be), "Hash types alignment mismatch");
 
@@ -25,7 +25,7 @@ evmc::bytes32 EvmCHost::get_storage(evmc::address const& _addr, evmc::bytes32 co
 {
     (void)_addr;
     assert(fromEvmC(_addr) == m_extVM.myAddress);
-    return toEvmC(m_extVM.store(fromEvmC(_key)));
+    return toEvmC(h256(m_extVM.store(fromEvmC(_key))));
 }
 
 evmc_storage_status EvmCHost::set_storage(
@@ -79,7 +79,7 @@ evmc_storage_status EvmCHost::set_storage(
 
 evmc::uint256be EvmCHost::get_balance(evmc::address const& _addr) const noexcept
 {
-    return toEvmC(m_extVM.balance(fromEvmC(_addr)));
+    return toEvmC(h256(m_extVM.balance(fromEvmC(_addr))));
 }
 
 size_t EvmCHost::get_code_size(evmc::address const& _addr) const noexcept
@@ -95,7 +95,7 @@ evmc::bytes32 EvmCHost::get_code_hash(evmc::address const& _addr) const noexcept
 size_t EvmCHost::copy_code(evmc::address const& _addr, size_t _codeOffset, byte* _bufferData,
     size_t _bufferSize) const noexcept
 {
-    Address addr = fromEvmC(_addr);
+    mcp::account addr = fromEvmC(_addr);
     bytes const& c = m_extVM.codeAt(addr);
 
     // Handle "big offset" edge case.
@@ -128,16 +128,16 @@ void EvmCHost::emit_log(evmc::address const& _addr, uint8_t const* _data, size_t
 evmc_tx_context EvmCHost::get_tx_context() const noexcept
 {
     evmc_tx_context result = {};
-    result.tx_gas_price = toEvmC(m_extVM.gasPrice);
+    result.tx_gas_price = toEvmC(h256(m_extVM.gasPrice));
     result.tx_origin = toEvmC(m_extVM.origin);
 
     auto const& envInfo = m_extVM.envInfo();
-    result.block_coinbase = toEvmC(envInfo.author());
-    result.block_number = envInfo.number();
+    // result.block_coinbase = toEvmC(envInfo.author());
+    // result.block_number = envInfo.number();
     result.block_timestamp = envInfo.timestamp();
-    result.block_gas_limit = static_cast<int64_t>(envInfo.gasLimit());
-    result.block_difficulty = toEvmC(envInfo.difficulty());
-    result.chain_id = toEvmC(envInfo.chainID());
+    // result.block_gas_limit = static_cast<int64_t>(envInfo.gasLimit());
+    // result.block_difficulty = toEvmC(envInfo.difficulty());
+    // result.chain_id = toEvmC(envInfo.chainID());
     return result;
 }
 
@@ -163,7 +163,11 @@ evmc::result EvmCHost::create(evmc_message const& _msg) noexcept
     evmcResult.gas_left = static_cast<int64_t>(gas);
 
     if (result.status == EVMC_SUCCESS)
-        evmcResult.create_address = toEvmC(result.address);
+    {
+        mcp::uint256_union a;
+        memcpy(a.data(), ((h256)result.address).data(), 32);
+        evmcResult.create_address = toEvmC(a);
+    }
     else
     {
         // Pass the output to the EVM without a copy. The EVM will delete it
@@ -238,7 +242,7 @@ evmc::result EvmCHost::call(evmc_message const& _msg) noexcept
     return evmc::result{evmcResult};
 }
 
-ExtVMFace::ExtVMFace(EnvInfo const& _envInfo, Address _myAddress, Address _caller, Address _origin,
+ExtVMFace::ExtVMFace(EnvInfo const& _envInfo, mcp::account _myAddress, mcp::account _caller, mcp::account _origin,
     u256 _value, u256 _gasPrice, bytesConstRef _data, bytes _code, h256 const& _codeHash,
     u256 const& _version, unsigned _depth, bool _isCreate, bool _staticCall)
   : m_envInfo(_envInfo),

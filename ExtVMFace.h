@@ -8,17 +8,24 @@
 #include <libdevcore/Common.h>
 #include <libdevcore/CommonData.h>
 #include <libdevcore/SHA3.h>
-#include <libethcore/BlockHeader.h>
-#include <libethcore/ChainOperationParams.h>
-#include <libethcore/Common.h>
-#include <libethcore/EVMSchedule.h>
-#include <libethcore/LogEntry.h>
+
+#include <mcp/common/numbers.hpp>
+#include <mcp/common/EVMSchedule.h>
+#include <mcp/common/utility.hpp>
+#include <mcp/core/log_entry.hpp>
+#include <mcp/core/block_store.hpp>
+#include <mcp/db/database.hpp>
 
 #include <evmc/evmc.hpp>
 
 #include <boost/optional.hpp>
 #include <functional>
 #include <set>
+
+namespace mcp
+{
+    class iblock_cache;
+}
 
 namespace dev
 {
@@ -72,8 +79,8 @@ private:
 
 struct SubState
 {
-    std::set<Address> selfdestructs;  ///< Any accounts that have selfdestructed.
-    LogEntries logs;                  ///< Any logs.
+    std::set<mcp::account> selfdestructs;  ///< Any accounts that have selfdestructed.
+    mcp::log_entries logs;                  ///< Any logs.
     int64_t refunds = 0;              ///< Refund counter for storage changes.
 
     SubState& operator+=(SubState const& _s)
@@ -102,7 +109,7 @@ using OnOpFunc = std::function<void(uint64_t /*steps*/, uint64_t /* PC */, Instr
 struct CallParameters
 {
     CallParameters() = default;
-    CallParameters(Address _senderAddress, Address _codeAddress, Address _receiveAddress,
+    CallParameters(mcp::account _senderAddress, mcp::account _codeAddress, mcp::account _receiveAddress,
         u256 _valueTransfer, u256 _apparentValue, u256 _gas, bytesConstRef _data,
         OnOpFunc _onOpFunc)
       : senderAddress(_senderAddress),
@@ -114,48 +121,56 @@ struct CallParameters
         data(_data),
         onOp(_onOpFunc)
     {}
-    Address senderAddress;
-    Address codeAddress;
-    Address receiveAddress;
+    mcp::account senderAddress;
+    mcp::account codeAddress;
+    mcp::account receiveAddress;
     u256 valueTransfer;
     u256 apparentValue;
     u256 gas;
     bytesConstRef data;
     bool staticCall = false;
+    std::shared_ptr<Instruction> op;
     OnOpFunc onOp;
+};
+
+class McInfo
+{
+public:
+	McInfo() = default;
+	McInfo(uint64_t const & mci_a, uint64_t const & mc_timestamp_a, uint64_t const & mc_last_summary_mci_a) :
+		mci(mci_a),
+		mc_timestamp(mc_timestamp_a),
+		mc_last_summary_mci(mc_last_summary_mci_a)
+	{
+	};
+
+	uint64_t mci;
+	uint64_t mc_timestamp;
+	uint64_t mc_last_summary_mci;
 };
 
 class EnvInfo
 {
 public:
-    EnvInfo(BlockHeader const& _current, LastBlockHashesFace const& _lh, u256 const& _gasUsed,
+    EnvInfo(mcp::db::db_transaction & transaction_a, mcp::block_store & store_a, std::shared_ptr<mcp::iblock_cache> cache_a, McInfo const & mci_info_a,
         u256 const& _chainID)
-      : m_headerInfo(_current), m_lastHashes(_lh), m_gasUsed(_gasUsed), m_chainID(_chainID)
-    {}
-    // Constructor with custom gasLimit - used in some synthetic scenarios like eth_estimateGas RPC
-    // method
-    EnvInfo(BlockHeader const& _current, LastBlockHashesFace const& _lh, u256 const& _gasUsed,
-        u256 const& _gasLimit, u256 const& _chainID)
-      : EnvInfo(_current, _lh, _gasUsed, _chainID)
-    {
-        m_headerInfo.setGasLimit(_gasLimit);
-    }
+    :transaction(transaction_a), store(store_a),cache(cache_a), m_mci_info(mci_info_a), m_chainID(_chainID)
+    {};
 
-    BlockHeader const& header() const { return m_headerInfo; }
+    mcp::db::db_transaction & transaction;
+    mcp::block_store& store;
+    std::shared_ptr<mcp::iblock_cache> cache;
 
-    int64_t number() const { return m_headerInfo.number(); }
-    Address const& author() const { return m_headerInfo.author(); }
-    int64_t timestamp() const { return m_headerInfo.timestamp(); }
-    u256 const& difficulty() const { return m_headerInfo.difficulty(); }
-    u256 const& gasLimit() const { return m_headerInfo.gasLimit(); }
-    LastBlockHashesFace const& lastHashes() const { return m_lastHashes; }
-    u256 const& gasUsed() const { return m_gasUsed; }
+    uint64_t number() const { return m_mci_info.mci; }
+    uint64_t mci() const { return m_mci_info.mci; }
+    uint64_t mc_timestamp() const { return m_mci_info.mc_timestamp; }
+    uint64_t timestamp() const { return m_mci_info.mc_timestamp; }
+    uint64_t mc_last_summary_mci() const { return m_mci_info.mc_last_summary_mci; }
+
     u256 const& chainID() const { return m_chainID; }
 
 private:
-    BlockHeader m_headerInfo;
-    LastBlockHashesFace const& m_lastHashes;
-    u256 m_gasUsed;
+	McInfo m_mci_info;
     u256 m_chainID;
 };
 
@@ -193,7 +208,7 @@ class ExtVMFace
 {
 public:
     /// Full constructor.
-    ExtVMFace(EnvInfo const& _envInfo, Address _myAddress, Address _caller, Address _origin,
+    ExtVMFace(EnvInfo const& _envInfo, mcp::account _myAddress, mcp::account _caller, mcp::account _origin,
         u256 _value, u256 _gasPrice, bytesConstRef _data, bytes _code, h256 const& _codeHash,
         u256 const& _version, unsigned _depth, bool _isCreate, bool _staticCall);
 
@@ -212,25 +227,25 @@ public:
     virtual u256 originalStorageValue(u256 const&) { return 0; }
 
     /// Read address's balance.
-    virtual u256 balance(Address) { return 0; }
+    virtual u256 balance(mcp::account) { return 0; }
 
     /// Read address's code.
-    virtual bytes const& codeAt(Address) { return NullBytes; }
+    virtual bytes const& codeAt(mcp::account) { return NullBytes; }
 
     /// @returns the size of the code in bytes at the given address.
-    virtual size_t codeSizeAt(Address) { return 0; }
+    virtual size_t codeSizeAt(mcp::account) { return 0; }
 
     /// @returns the hash of the code at the given address.
-    virtual h256 codeHashAt(Address) { return h256{}; }
+    virtual h256 codeHashAt(mcp::account) { return h256{}; }
 
     /// Does the account exist?
-    virtual bool exists(Address) { return false; }
+    virtual bool exists(mcp::account) { return false; }
 
     /// Selfdestruct the associated contract and give proceeds to the given address.
     ///
     /// @param beneficiary  The address of the account which will receive ETH
     ///                     from the selfdestructed account.
-    virtual void selfdestruct(Address beneficiary)
+    virtual void selfdestruct(mcp::account beneficiary)
     {
         (void)beneficiary;
         sub.selfdestructs.insert(myAddress);
@@ -245,7 +260,7 @@ public:
     /// Revert any changes made (by any of the other calls).
     virtual void log(h256s&& _topics, bytesConstRef _data)
     {
-        sub.logs.push_back(LogEntry(myAddress, std::move(_topics), _data.toBytes()));
+        sub.logs.push_back(mcp::log_entry(myAddress, std::move(_topics), _data.toBytes()));
     }
 
     /// Hash of a block if within the last 256 blocks, or h256() otherwise.
@@ -262,9 +277,9 @@ private:
 
 public:
     // TODO: make private
-    Address myAddress;  ///< Address associated with executing code (a contract, or contract-to-be).
-    Address caller;     ///< Address which sent the message (either equal to origin or a contract).
-    Address origin;     ///< Original transactor.
+    mcp::account myAddress;  ///< Address associated with executing code (a contract, or contract-to-be).
+    mcp::account caller;     ///< Address which sent the message (either equal to origin or a contract).
+    mcp::account origin;     ///< Original transactor.
     u256 value;         ///< Value (in Wei) that was passed to this address.
     u256 gasPrice;      ///< Price of gas (that we already paid).
     bytesConstRef data;       ///< Current input data.
@@ -283,34 +298,34 @@ class EvmCHost : public evmc::Host
 public:
     explicit EvmCHost(ExtVMFace& _extVM) : m_extVM{_extVM} {}
 
-    bool account_exists(const evmc::address& _addr) const noexcept override;
+    bool account_exists(const evmc::address& _addr) const noexcept; // override;
 
     evmc::bytes32 get_storage(const evmc::address& _addr, const evmc::bytes32& _key) const
-        noexcept override;
+        noexcept; // override;
 
     evmc_storage_status set_storage(const evmc::address& _addr, const evmc::bytes32& _key,
-        const evmc::bytes32& _value) noexcept override;
+        const evmc::bytes32& _value) noexcept; // override;
 
-    evmc::uint256be get_balance(const evmc::address& _addr) const noexcept override;
+    evmc::uint256be get_balance(const evmc::address& _addr) const noexcept; // override;
 
-    size_t get_code_size(const evmc::address& _addr) const noexcept override;
+    size_t get_code_size(const evmc::address& _addr) const noexcept; // override;
 
-    evmc::bytes32 get_code_hash(const evmc::address& _addr) const noexcept override;
+    evmc::bytes32 get_code_hash(const evmc::address& _addr) const noexcept; // override;
 
     size_t copy_code(const evmc::address& _addr, size_t _codeOffset, uint8_t* _bufferData,
-        size_t _bufferSize) const noexcept override;
+        size_t _bufferSize) const noexcept; // override;
 
     void selfdestruct(
-        const evmc::address& _addr, const evmc::address& _beneficiary) noexcept override;
+        const evmc::address& _addr, const evmc::address& _beneficiary) noexcept; // override;
 
-    evmc::result call(const evmc_message& _msg) noexcept override;
+    evmc::result call(const evmc_message& _msg) noexcept; // override;
 
-    evmc_tx_context get_tx_context() const noexcept override;
+    evmc_tx_context get_tx_context() const noexcept; // override;
 
-    evmc::bytes32 get_block_hash(int64_t _blockNumber) const noexcept override;
+    evmc::bytes32 get_block_hash(int64_t _blockNumber) const noexcept; // override;
 
     void emit_log(const evmc::address& _addr, const uint8_t* _data, size_t _dataSize,
-        const evmc::bytes32 _topics[], size_t _numTopics) noexcept override;
+        const evmc::bytes32 _topics[], size_t _numTopics) noexcept; // override;
 
 private:
     evmc::result create(evmc_message const& _msg) noexcept;
@@ -319,7 +334,7 @@ private:
     ExtVMFace& m_extVM;
 };
 
-inline evmc::address toEvmC(Address const& _addr)
+inline evmc::address toEvmC(mcp::account const& _addr)
 {
     return reinterpret_cast<evmc_address const&>(_addr);
 }
@@ -334,9 +349,9 @@ inline u256 fromEvmC(evmc_uint256be const& _n)
     return fromBigEndian<u256>(_n.bytes);
 }
 
-inline Address fromEvmC(evmc::address const& _addr)
+inline mcp::account fromEvmC(evmc::address const& _addr)
 {
-    return reinterpret_cast<Address const&>(_addr);
+    return reinterpret_cast<mcp::account const&>(_addr);
 }
 }  // namespace eth
 }  // namespace dev

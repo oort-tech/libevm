@@ -325,7 +325,7 @@ void LegacyVM::interpretCases()
             m_runGas = toInt63(m_schedule->selfdestructGas);
             updateIOGas();
 
-            Address const dest = asAddress(m_SP[0]);
+            mcp::account const dest = asAddress(m_SP[0]);
             // Starting with EIP150, self-destructs need to pay both gas cost and account creation
             // gas cost. Starting with EIP158, 0-value self-destructs don't need to pay this account
             // creation cost.
@@ -1366,7 +1366,7 @@ void LegacyVM::interpretCases()
             updateMem(memNeed(m_SP[1], m_SP[3]));
             updateIOGas();
 
-            Address a = asAddress(m_SP[0]);
+            mcp::account a = asAddress(m_SP[0]);
             copyDataToMemory(&m_ext->codeAt(a), m_SP + 1);
         }
         NEXT
@@ -1391,14 +1391,14 @@ void LegacyVM::interpretCases()
         }
         NEXT
 
-        CASE(COINBASE)
-        {
-            ON_OP();
-            updateIOGas();
+        // CASE(COINBASE)
+        // {
+        //     ON_OP();
+        //     updateIOGas();
 
-            m_SPP[0] = (u160)m_ext->envInfo().author();
-        }
-        NEXT
+        //     m_SPP[0] = (u160)m_ext->envInfo().author();
+        // }
+        // NEXT
 
         CASE(TIMESTAMP)
         {
@@ -1418,23 +1418,23 @@ void LegacyVM::interpretCases()
         }
         NEXT
 
-        CASE(DIFFICULTY)
-        {
-            ON_OP();
-            updateIOGas();
+        // CASE(DIFFICULTY)
+        // {
+        //     ON_OP();
+        //     updateIOGas();
 
-            m_SPP[0] = m_ext->envInfo().difficulty();
-        }
-        NEXT
+        //     m_SPP[0] = m_ext->envInfo().difficulty();
+        // }
+        // NEXT
 
-        CASE(GASLIMIT)
-        {
-            ON_OP();
-            updateIOGas();
+        // CASE(GASLIMIT)
+        // {
+        //     ON_OP();
+        //     updateIOGas();
 
-            m_SPP[0] = m_ext->envInfo().gasLimit();
-        }
-        NEXT
+        //     m_SPP[0] = m_ext->envInfo().gasLimit();
+        // }
+        // NEXT
 
         CASE(CHAINID)
         {
