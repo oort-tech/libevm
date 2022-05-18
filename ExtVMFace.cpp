@@ -26,16 +26,16 @@ namespace eth
 namespace
 {
 
-// static_assert(sizeof(mcp::account) == sizeof(evmc_address), "Address types size mismatch");
-//sichaoy: alignof(mcp::account) = 8, alignof(evmc_address) = 1. Disable this assert might introduce problems. Need further attention
-//static_assert(alignof(mcp::account) == alignof(evmc_address), "Address types alignment mismatch");
+// static_assert(sizeof(Address) == sizeof(evmc_address), "Address types size mismatch");
+//sichaoy: alignof(Address) = 8, alignof(evmc_address) = 1. Disable this assert might introduce problems. Need further attention
+//static_assert(alignof(Address) == alignof(evmc_address), "Address types alignment mismatch");
 static_assert(sizeof(h256) == sizeof(evmc_uint256be), "Hash types size mismatch");
 static_assert(alignof(h256) == alignof(evmc_uint256be), "Hash types alignment mismatch");
 
 bool accountExists(evmc_context* _context, evmc_address const* _addr) noexcept
 {
     auto& env = static_cast<ExtVMFace&>(*_context);
-    mcp::account addr = fromEvmC(*_addr);
+    Address addr = fromEvmC(*_addr);
     return env.exists(addr);
 }
 
@@ -121,7 +121,7 @@ size_t copyCode(evmc_context* _context, evmc_address const* _addr, size_t _codeO
     byte* _bufferData, size_t _bufferSize)
 {
     auto& env = static_cast<ExtVMFace&>(*_context);
-    mcp::account addr = fromEvmC(*_addr);
+    Address addr = fromEvmC(*_addr);
     bytes const& code = env.codeAt(addr);
 
     // Handle "big offset" edge case.
@@ -296,7 +296,7 @@ evmc_host_interface const hostInterface = {
 };
 }
 
-ExtVMFace::ExtVMFace(EnvInfo const& _envInfo, mcp::account _myAddress, mcp::account _caller, mcp::account _origin,
+ExtVMFace::ExtVMFace(EnvInfo const& _envInfo, Address _myAddress, Address _caller, Address _origin,
     u256 _value, u256 _gasPrice, bytesConstRef _data, bytes _code, h256 const& _codeHash,
     unsigned _depth, bool _isCreate, bool _staticCall)
   : 

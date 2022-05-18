@@ -94,7 +94,7 @@ private:
 
 struct SubState
 {
-    std::set<mcp::account> suicides;    ///< Any accounts that have suicided.
+    std::set<Address> suicides;    ///< Any accounts that have suicided.
     mcp::log_entries logs;      ///< Any logs.
     int64_t refunds = 0;        ///< Refund counter of SSTORE nonzero->zero.
 
@@ -124,9 +124,9 @@ struct CallParameters
 {
     CallParameters() = default;
     CallParameters(
-        mcp::account _senderAddress,
-        mcp::account _codeAddress,
-        mcp::account _receiveAddress,
+		Address _senderAddress,
+		Address _codeAddress,
+		Address _receiveAddress,
         u256 _valueTransfer,
         u256 _apparentValue,
         u256 _gas,
@@ -134,9 +134,9 @@ struct CallParameters
         OnOpFunc _onOpFunc
     ):    senderAddress(_senderAddress), codeAddress(_codeAddress), receiveAddress(_receiveAddress),
         valueTransfer(_valueTransfer), apparentValue(_apparentValue), gas(_gas), data(_data), onOp(_onOpFunc)  {}
-    mcp::account senderAddress;
-    mcp::account codeAddress;
-    mcp::account receiveAddress;
+	Address senderAddress;
+	Address codeAddress;
+	Address receiveAddress;
     u256 valueTransfer;
     u256 apparentValue;
     u256 gas;
@@ -203,9 +203,9 @@ struct CreateResult
 {
     evmc_status_code status;
     owning_bytes_ref output;
-    mcp::account address;
+    Address address;
 
-    CreateResult(evmc_status_code status, owning_bytes_ref&& output, mcp::account const& address)
+    CreateResult(evmc_status_code status, owning_bytes_ref&& output, Address const& address)
         : status{status}, output{std::move(output)}, address{address}
     {}
 };
@@ -217,7 +217,7 @@ class ExtVMFace: public evmc_context
 {
 public:
     /// Full constructor.
-    ExtVMFace(EnvInfo const& _envInfo, mcp::account _myAddress, mcp::account _caller, mcp::account _origin,
+    ExtVMFace(EnvInfo const& _envInfo, Address _myAddress, Address _caller, Address _origin,
         u256 _value, u256 _gasPrice, bytesConstRef _data, bytes _code, h256 const& _codeHash,
         unsigned _depth, bool _isCreate, bool _staticCall);
 
@@ -236,22 +236,22 @@ public:
     virtual u256 originalStorageValue(u256 const&) { return 0; }
 
     /// Read address's balance.
-    virtual u256 balance(mcp::account) { return 0; }
+    virtual u256 balance(Address) { return 0; }
 
     /// Read address's code.
-    virtual bytes const& codeAt(mcp::account) { return NullBytes; }
+    virtual bytes const& codeAt(Address) { return NullBytes; }
 
     /// @returns the size of the code in bytes at the given address.
-    virtual size_t codeSizeAt(mcp::account) { return 0; }
+    virtual size_t codeSizeAt(Address) { return 0; }
 
     /// @returns the hash of the code at the given address.
-    virtual h256 codeHashAt(mcp::account) { return h256{}; }
+    virtual h256 codeHashAt(Address) { return h256{}; }
 
     /// Does the account exist?
-    virtual bool exists(mcp::account) { return false; }
+    virtual bool exists(Address) { return false; }
 
     /// Suicide the associated contract and give proceeds to the given address.
-    virtual void suicide(mcp::account) { sub.suicides.insert(myAddress); }
+    virtual void suicide(Address) { sub.suicides.insert(myAddress); }
 
     /// Create a new (contract) account.
     virtual CreateResult create(u256, u256&, bytesConstRef, Instruction, u256, OnOpFunc const&) = 0;
@@ -275,9 +275,9 @@ private:
 
 public:
     // TODO: make private
-    mcp::account myAddress;  ///< Address associated with executing code (a contract, or contract-to-be).
-    mcp::account caller;     ///< Address which sent the message (either equal to origin or a contract).
-    mcp::account origin;     ///< Original transactor.
+	Address myAddress;  ///< Address associated with executing code (a contract, or contract-to-be).
+	Address caller;     ///< Address which sent the message (either equal to origin or a contract).
+	Address origin;     ///< Original transactor.
     u256 value;         ///< Value (in Wei) that was passed to this address.
     u256 gasPrice;      ///< Price of gas (that we already paid).
     bytesConstRef data;       ///< Current input data.
@@ -290,7 +290,7 @@ public:
     bool staticCall = false;  ///< Throw on state changing.
 };
 
-inline evmc_address toEvmC(mcp::account const& _addr)
+inline evmc_address toEvmC(Address const& _addr)
 {
     return reinterpret_cast<evmc_address const&>(_addr);
 }
@@ -305,9 +305,9 @@ inline u256 fromEvmC(evmc_uint256be const& _n)
     return fromBigEndian<u256>(_n.bytes);
 }
 
-inline mcp::account fromEvmC(evmc_address const& _addr)
+inline Address fromEvmC(evmc_address const& _addr)
 {
-    return reinterpret_cast<mcp::account const&>(_addr);
+    return reinterpret_cast<Address const&>(_addr);
 }
 }
 }

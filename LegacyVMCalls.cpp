@@ -154,7 +154,7 @@ void LegacyVM::caseCreate()
 
 
         CreateResult result = m_ext->create(endowment, gas, initCode, m_OP, salt, m_onOp);
-        m_SPP[0] = (u256)result.address.number();  // Convert address to integer.
+        m_SPP[0] = (u160)result.address;  // Convert address to integer.
         m_returnData = result.output.toBytes();
 
         *m_io_gas_p -= (createGas - gas);
@@ -212,7 +212,7 @@ bool LegacyVM::caseCallSetup(CallParameters *callParams, bytesRef& o_output)
 
     bool const haveValueArg = m_OP == Instruction::CALL || m_OP == Instruction::CALLCODE;
 
-    mcp::account destinationAddr = asAddress(m_SP[1]);
+	auto const destinationAddr = asAddress(m_SP[1]);
     if (m_OP == Instruction::CALL && !m_ext->exists(destinationAddr))
         if (m_SP[2] > 0 || m_schedule->zeroValueTransferChargesNewAccountGas())
             m_runGas += toInt63(m_schedule->callNewAccountGas);
