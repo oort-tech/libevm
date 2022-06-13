@@ -1391,14 +1391,14 @@ void LegacyVM::interpretCases()
         }
         NEXT
 
-        CASE(COINBASE)
-        {
-            ON_OP();
-            updateIOGas();
+        // CASE(COINBASE)
+        // {
+        //     ON_OP();
+        //     updateIOGas();
 
-            m_SPP[0] = (u160)m_ext->envInfo().author();
-        }
-        NEXT
+        //     m_SPP[0] = (u160)m_ext->envInfo().author();
+        // }
+        // NEXT
 
         CASE(TIMESTAMP)
         {
@@ -1418,23 +1418,23 @@ void LegacyVM::interpretCases()
         }
         NEXT
 
-        CASE(DIFFICULTY)
-        {
-            ON_OP();
-            updateIOGas();
+        // CASE(DIFFICULTY)
+        // {
+        //     ON_OP();
+        //     updateIOGas();
 
-            m_SPP[0] = m_ext->envInfo().difficulty();
-        }
-        NEXT
+        //     m_SPP[0] = m_ext->envInfo().difficulty();
+        // }
+        // NEXT
 
-        CASE(GASLIMIT)
-        {
-            ON_OP();
-            updateIOGas();
+        // CASE(GASLIMIT)
+        // {
+        //     ON_OP();
+        //     updateIOGas();
 
-            m_SPP[0] = m_ext->envInfo().gasLimit();
-        }
-        NEXT
+        //     m_SPP[0] = m_ext->envInfo().gasLimit();
+        // }
+        // NEXT
 
         CASE(CHAINID)
         {

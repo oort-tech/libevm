@@ -15,8 +15,8 @@ add_library(evm ${sources})
 
 target_link_libraries(
     evm
-    PUBLIC ethcore devcore evmc::evmc
-    PRIVATE aleth-interpreter aleth-buildinfo jsoncpp_lib_static Boost::program_options evmc::loader
+    PUBLIC devcore evmc::evmc
+    PRIVATE evmc::loader
 )
 
 if(EVM_OPTIMIZE)

@@ -132,11 +132,11 @@ evmc_tx_context EvmCHost::get_tx_context() const noexcept
     result.tx_origin = toEvmC(m_extVM.origin);
 
     auto const& envInfo = m_extVM.envInfo();
-    result.block_coinbase = toEvmC(envInfo.author());
+    // result.block_coinbase = toEvmC(envInfo.author());
     result.block_number = envInfo.number();
     result.block_timestamp = envInfo.timestamp();
-    result.block_gas_limit = static_cast<int64_t>(envInfo.gasLimit());
-    result.block_difficulty = toEvmC(envInfo.difficulty());
+    // result.block_gas_limit = static_cast<int64_t>(envInfo.gasLimit());
+    // result.block_difficulty = toEvmC(envInfo.difficulty());
     result.chain_id = toEvmC(envInfo.chainID());
     return result;
 }

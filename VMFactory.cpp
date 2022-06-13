@@ -6,8 +6,6 @@
 #include "EVMC.h"
 #include "LegacyVM.h"
 
-#include <libaleth-interpreter/interpreter.h>
-
 #include <evmc/loader.h>
 
 namespace po = boost::program_options;
@@ -168,8 +166,8 @@ VMPtr VMFactory::create(VMKind _kind)
 
     switch (_kind)
     {
-    case VMKind::Interpreter:
-        return {new EVMC{evmc_create_aleth_interpreter(), s_evmcOptions}, default_delete};
+    // case VMKind::Interpreter:
+    //     return {new EVMC{evmc_create_aleth_interpreter(), s_evmcOptions}, default_delete};
     case VMKind::DLL:
         assert(g_evmcDll != nullptr);
         // Return "fake" owning pointer to global EVMC DLL VM.
