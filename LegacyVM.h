@@ -130,8 +130,8 @@ private:
     void logGasMem();
     void fetchInstruction();
     
-    uint64_t decodeJumpDest(const CryptoPP::byte* const _code, uint64_t& _pc);
-    uint64_t decodeJumpvDest(const CryptoPP::byte* const _code, uint64_t& _pc, CryptoPP::byte _voff);
+    uint64_t decodeJumpDest(const byte* const _code, uint64_t& _pc);
+    uint64_t decodeJumpvDest(const byte* const _code, uint64_t& _pc, byte _voff);
 
     template<class T> uint64_t toInt63(T v)
     {
