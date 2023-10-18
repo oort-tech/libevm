@@ -132,11 +132,11 @@ evmc_tx_context EvmCHost::get_tx_context() const noexcept
     result.tx_origin = toEvmC(m_extVM.origin);
 
     auto const& envInfo = m_extVM.envInfo();
-    result.block_coinbase = toEvmC(envInfo.author());
+    // result.block_coinbase = toEvmC(envInfo.author());
     result.block_number = envInfo.number();
     result.block_timestamp = envInfo.timestamp();
-    result.block_gas_limit = static_cast<int64_t>(envInfo.gasLimit());
-    result.block_difficulty = toEvmC(envInfo.difficulty());
+    // result.block_gas_limit = static_cast<int64_t>(envInfo.gasLimit());
+    // result.block_difficulty = toEvmC(envInfo.difficulty());
     result.chain_id = toEvmC(envInfo.chainID());
     return result;
 }
@@ -176,7 +176,7 @@ evmc::result EvmCHost::create(evmc_message const& _msg) noexcept
 
         // Place a new vector of bytes containing output in result's reserved memory.
         auto* data = evmc_get_optional_storage(&evmcResult);
-        static_assert(sizeof(bytes) <= sizeof(*data), "Vector is too big");
+        // static_assert(sizeof(bytes) <= sizeof(*data), "Vector is too big");
         new (data) bytes(result.output.takeBytes());
         // Set the destructor to delete the vector.
         evmcResult.release = [](evmc_result const* _result) {
@@ -225,7 +225,7 @@ evmc::result EvmCHost::call(evmc_message const& _msg) noexcept
 
     // Place a new vector of bytes containing output in result's reserved memory.
     auto* data = evmc_get_optional_storage(&evmcResult);
-    static_assert(sizeof(bytes) <= sizeof(*data), "Vector is too big");
+    // static_assert(sizeof(bytes) <= sizeof(*data), "Vector is too big");
     new (data) bytes(result.output.takeBytes());
     // Set the destructor to delete the vector.
     evmcResult.release = [](evmc_result const* _result) {

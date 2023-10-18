@@ -215,11 +215,11 @@ namespace dev
         &&RETURNDATACOPY,                       \
         &&EXTCODEHASH,                          \
         &&BLOCKHASH, /* 40, */                  \
-        &&COINBASE,                             \
+        &&INVALID,  /* &&COINBASE, */           \
         &&TIMESTAMP,                            \
         &&NUMBER,                               \
-        &&DIFFICULTY,                           \
-        &&GASLIMIT,                             \
+        &&INVALID, /* &&DIFFICULTY,  */         \
+        &&INVALID, /* &&GASLIMIT,    */         \
         &&CHAINID,                              \
         &&SELFBALANCE,                          \
         &&INVALID,                              \

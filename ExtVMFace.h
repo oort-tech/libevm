@@ -8,17 +8,24 @@
 #include <libdevcore/Common.h>
 #include <libdevcore/CommonData.h>
 #include <libdevcore/SHA3.h>
-#include <libethcore/BlockHeader.h>
-#include <libethcore/ChainOperationParams.h>
-#include <libethcore/Common.h>
-#include <libethcore/EVMSchedule.h>
-#include <libethcore/LogEntry.h>
+
+#include <mcp/common/numbers.hpp>
+#include <mcp/common/EVMSchedule.h>
+#include <mcp/common/utility.hpp>
+#include <mcp/core/log_entry.hpp>
+#include <mcp/core/block_store.hpp>
+#include <mcp/db/database.hpp>
 
 #include <evmc/evmc.hpp>
 
 #include <boost/optional.hpp>
 #include <functional>
 #include <set>
+
+namespace mcp
+{
+    class iblock_cache;
+}
 
 namespace dev
 {
@@ -73,7 +80,7 @@ private:
 struct SubState
 {
     std::set<Address> selfdestructs;  ///< Any accounts that have selfdestructed.
-    LogEntries logs;                  ///< Any logs.
+    mcp::log_entries logs;            ///< Any logs.
     int64_t refunds = 0;              ///< Refund counter for storage changes.
 
     SubState& operator+=(SubState const& _s)
@@ -122,40 +129,50 @@ struct CallParameters
     u256 gas;
     bytesConstRef data;
     bool staticCall = false;
+    std::shared_ptr<Instruction> op;
     OnOpFunc onOp;
+};
+
+class McInfo
+{
+public:
+    McInfo() = default;
+    McInfo(uint64_t const & bn, uint64_t const & mci_a, uint64_t const & mc_timestamp_a, uint64_t const & mc_last_summary_mci_a) :
+        block_number(bn),
+        mci(mci_a),
+        mc_timestamp(mc_timestamp_a),
+        mc_last_summary_mci(mc_last_summary_mci_a)
+    {
+    };
+
+    uint64_t block_number;
+    uint64_t mci;
+    uint64_t mc_timestamp;
+    uint64_t mc_last_summary_mci;
 };
 
 class EnvInfo
 {
 public:
-    EnvInfo(BlockHeader const& _current, LastBlockHashesFace const& _lh, u256 const& _gasUsed,
+    EnvInfo(mcp::db::db_transaction & transaction_a, mcp::block_store & store_a, std::shared_ptr<mcp::iblock_cache> cache_a, McInfo const & mci_info_a,
         u256 const& _chainID)
-      : m_headerInfo(_current), m_lastHashes(_lh), m_gasUsed(_gasUsed), m_chainID(_chainID)
-    {}
-    // Constructor with custom gasLimit - used in some synthetic scenarios like eth_estimateGas RPC
-    // method
-    EnvInfo(BlockHeader const& _current, LastBlockHashesFace const& _lh, u256 const& _gasUsed,
-        u256 const& _gasLimit, u256 const& _chainID)
-      : EnvInfo(_current, _lh, _gasUsed, _chainID)
-    {
-        m_headerInfo.setGasLimit(_gasLimit);
-    }
+    :transaction(transaction_a), store(store_a),cache(cache_a), m_mci_info(mci_info_a), m_chainID(_chainID)
+    {};
 
-    BlockHeader const& header() const { return m_headerInfo; }
+    mcp::db::db_transaction & transaction;
+    mcp::block_store& store;
+    std::shared_ptr<mcp::iblock_cache> cache;
 
-    int64_t number() const { return m_headerInfo.number(); }
-    Address const& author() const { return m_headerInfo.author(); }
-    int64_t timestamp() const { return m_headerInfo.timestamp(); }
-    u256 const& difficulty() const { return m_headerInfo.difficulty(); }
-    u256 const& gasLimit() const { return m_headerInfo.gasLimit(); }
-    LastBlockHashesFace const& lastHashes() const { return m_lastHashes; }
-    u256 const& gasUsed() const { return m_gasUsed; }
+    uint64_t number() const { return m_mci_info.block_number; }
+    uint64_t mci() const { return m_mci_info.mci; }
+    uint64_t mc_timestamp() const { return m_mci_info.mc_timestamp; }
+    uint64_t timestamp() const { return m_mci_info.mc_timestamp; }
+    uint64_t mc_last_summary_mci() const { return m_mci_info.mc_last_summary_mci; }
+
     u256 const& chainID() const { return m_chainID; }
 
 private:
-    BlockHeader m_headerInfo;
-    LastBlockHashesFace const& m_lastHashes;
-    u256 m_gasUsed;
+    McInfo m_mci_info;
     u256 m_chainID;
 };
 
@@ -245,7 +262,7 @@ public:
     /// Revert any changes made (by any of the other calls).
     virtual void log(h256s&& _topics, bytesConstRef _data)
     {
-        sub.logs.push_back(LogEntry(myAddress, std::move(_topics), _data.toBytes()));
+        sub.logs.push_back(mcp::log_entry(myAddress, std::move(_topics), _data.toBytes()));
     }
 
     /// Hash of a block if within the last 256 blocks, or h256() otherwise.
