@@ -73,6 +73,7 @@ static const std::map<Instruction,  InstructionInfo> c_instructionInfo =
     { Instruction::PC,           { "PC",                  0,    1,  Tier::Base } },
     { Instruction::MSIZE,        { "MSIZE",               0,    1,  Tier::Base } },
     { Instruction::GAS,          { "GAS",                 0,    1,  Tier::Base } },
+    { Instruction::PUSH0,        { "PUSH0",               0,    1,  Tier::Base } },
     { Instruction::JUMPDEST,     { "JUMPDEST",            0,    0,  Tier::Special } },
     { Instruction::PUSH1,        { "PUSH1",               0,    1,  Tier::VeryLow } },
     { Instruction::PUSH2,        { "PUSH2",               0,    1,  Tier::VeryLow } },
