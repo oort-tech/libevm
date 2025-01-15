@@ -245,7 +245,7 @@ namespace dev
         &&BEGINDATA,                            \
         &&BEGINSUB,                             \
         &&INVALID,                              \
-        &&INVALID,                              \
+        &&PUSH0,                              \
         &&PUSH1, /* 60, */                      \
         &&PUSH2,                                \
         &&PUSH3,                                \
