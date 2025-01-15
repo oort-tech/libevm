@@ -16,7 +16,7 @@ add_library(evm ${sources})
 target_link_libraries(
     evm
     PUBLIC devcore evmc::evmc
-    PRIVATE evmc::loader
+    PRIVATE interpreter evmc::loader
 )
 
 if(EVM_OPTIMIZE)

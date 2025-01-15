@@ -18,6 +18,9 @@ enum class VMKind
     DLL
 };
 
+/// Returns the EVMC options parsed from command line.
+std::vector<std::pair<std::string, std::string>>& evmcOptions() noexcept;
+
 /// Provide a set of program options related to VMs.
 ///
 /// @param _lineLength  The line length for description text wrapping, the same as in

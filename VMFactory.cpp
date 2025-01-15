@@ -6,6 +6,8 @@
 #include "EVMC.h"
 #include "LegacyVM.h"
 
+#include <libinterpreter/interpreter.h>
+
 #include <evmc/loader.h>
 
 namespace po = boost::program_options;
@@ -16,16 +18,14 @@ namespace eth
 {
 namespace
 {
-auto g_kind = VMKind::Legacy;
+//auto g_kind = VMKind::Legacy;
+auto g_kind = VMKind::Interpreter; ///for test
 
 /// The pointer to EVMC create function in DLL EVMC VM.
 ///
 /// This variable is only written once when processing command line arguments,
 /// so access is thread-safe.
 std::unique_ptr<EVMC> g_evmcDll;
-
-/// The list of EVMC options stored as pairs of (name, value).
-std::vector<std::pair<std::string, std::string>> s_evmcOptions;
 
 /// A helper type to build the tabled of VM implementations.
 ///
@@ -87,7 +87,7 @@ void setVMKind(const std::string& _name)
                 "loading " + _name + " failed"));
     }
 
-    g_evmcDll.reset(new EVMC{vm, s_evmcOptions});
+    g_evmcDll.reset(new EVMC{vm});
 
     cnote << "Loaded EVMC module: " << g_evmcDll->name() << " " << g_evmcDll->version() << " ("
           << _name << ")";
@@ -99,6 +99,9 @@ namespace
 /// The name of the program option --evmc. The boost will trim the tailing
 /// space and we can reuse this variable in exception message.
 const char c_evmcPrefix[] = "evmc ";
+
+/// The list of EVMC options stored as pairs of (name, value).
+std::vector<std::pair<std::string, std::string>> s_evmcOptions;
 
 /// The additional parser for EVMC options. The options should look like
 /// `--evmc name=value` or `--evmc=name=value`. The boost pass the strings
@@ -117,6 +120,11 @@ void parseEvmcOptions(const std::vector<std::string>& _opts)
     }
 }
 }  // namespace
+
+std::vector<std::pair<std::string, std::string>>& evmcOptions() noexcept
+{
+    return s_evmcOptions;
+};
 
 po::options_description vmProgramOptions(unsigned _lineLength)
 {
@@ -166,8 +174,8 @@ VMPtr VMFactory::create(VMKind _kind)
 
     switch (_kind)
     {
-    // case VMKind::Interpreter:
-    //     return {new EVMC{evmc_create_aleth_interpreter(), s_evmcOptions}, default_delete};
+    case VMKind::Interpreter:
+        return {new EVMC{evmc_create_aleth_interpreter()}, default_delete};
     case VMKind::DLL:
         assert(g_evmcDll != nullptr);
         // Return "fake" owning pointer to global EVMC DLL VM.
