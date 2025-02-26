@@ -19,7 +19,7 @@ namespace eth
 namespace
 {
 //auto g_kind = VMKind::Legacy;
-auto g_kind = VMKind::Interpreter; ///for test
+auto g_kind = VMKind::Interpreter;
 
 /// The pointer to EVMC create function in DLL EVMC VM.
 ///

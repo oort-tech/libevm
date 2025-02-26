@@ -38,7 +38,7 @@ evmc_storage_status EvmCHost::set_storage(
     u256 const currentValue = m_extVM.store(index);
 
     if (newValue == currentValue)
-        return EVMC_STORAGE_UNCHANGED;
+        return EVMC_STORAGE_ASSIGNED;
 
     EVMSchedule const& schedule = m_extVM.evmSchedule();
     auto status = EVMC_STORAGE_MODIFIED;
@@ -55,7 +55,7 @@ evmc_storage_status EvmCHost::set_storage(
     }
     else
     {
-        status = EVMC_STORAGE_MODIFIED_AGAIN;
+        status = EVMC_STORAGE_ASSIGNED;
         if (originalValue != 0)
         {
             if (currentValue == 0)
@@ -108,11 +108,11 @@ size_t EvmCHost::copy_code(evmc::address const& _addr, size_t _codeOffset, byte*
     return numToCopy;
 }
 
-void EvmCHost::selfdestruct(evmc::address const& _addr, evmc::address const& _beneficiary) noexcept
+bool EvmCHost::selfdestruct(evmc::address const& _addr, evmc::address const& _beneficiary) noexcept
 {
     (void)_addr;
     assert(fromEvmC(_addr) == m_extVM.myAddress);
-    m_extVM.selfdestruct(fromEvmC(_beneficiary));
+    return m_extVM.selfdestruct(fromEvmC(_beneficiary));
 }
 
 
@@ -125,6 +125,18 @@ void EvmCHost::emit_log(evmc::address const& _addr, uint8_t const* _data, size_t
     m_extVM.log(h256s{pTopics, pTopics + _numTopics}, bytesConstRef{_data, _dataSize});
 }
 
+evmc_access_status EvmCHost::access_account(const evmc::address& addr) noexcept
+{
+    //To expand, future implementation, eip2929
+    return evmc_access_status::EVMC_ACCESS_COLD;
+}
+
+evmc_access_status EvmCHost::access_storage(const evmc::address& addr, const evmc::bytes32& key) noexcept
+{
+    //To expand, future implementation, eip2929
+    return evmc_access_status::EVMC_ACCESS_COLD;
+}
+
 evmc_tx_context EvmCHost::get_tx_context() const noexcept
 {
     evmc_tx_context result = {};
@@ -132,10 +144,11 @@ evmc_tx_context EvmCHost::get_tx_context() const noexcept
     result.tx_origin = toEvmC(m_extVM.origin);
 
     auto const& envInfo = m_extVM.envInfo();
-    // result.block_coinbase = toEvmC(envInfo.author());
+    result.block_coinbase = toEvmC(envInfo.author());
     result.block_number = envInfo.number();
     result.block_timestamp = envInfo.timestamp();
-    // result.block_gas_limit = static_cast<int64_t>(envInfo.gasLimit());
+    result.block_gas_limit = envInfo.gasLimit();
+    result.block_base_fee = toEvmC(u256(m_extVM.evmSchedule().txGas));
     // result.block_difficulty = toEvmC(envInfo.difficulty());
     result.chain_id = toEvmC(envInfo.chainID());
     return result;
@@ -146,7 +159,7 @@ evmc::bytes32 EvmCHost::get_block_hash(int64_t _number) const noexcept
     return toEvmC(m_extVM.blockHash(_number));
 }
 
-evmc::result EvmCHost::create(evmc_message const& _msg) noexcept
+evmc::Result EvmCHost::create(evmc_message const& _msg) noexcept
 {
     u256 gas = _msg.gas;
     u256 value = fromEvmC(_msg.value);
@@ -187,10 +200,10 @@ evmc::result EvmCHost::create(evmc_message const& _msg) noexcept
             output.~bytes();
         };
     }
-    return evmc::result{evmcResult};
+    return evmc::Result{evmcResult};
 }
 
-evmc::result EvmCHost::call(evmc_message const& _msg) noexcept
+evmc::Result EvmCHost::call(evmc_message const& _msg) noexcept
 {
     assert(_msg.gas >= 0 && "Invalid gas value");
     assert(_msg.depth == static_cast<int>(m_extVM.depth) + 1);
@@ -204,7 +217,7 @@ evmc::result EvmCHost::call(evmc_message const& _msg) noexcept
     params.apparentValue = fromEvmC(_msg.value);
     params.valueTransfer = _msg.kind == EVMC_DELEGATECALL ? 0 : params.apparentValue;
     params.senderAddress = fromEvmC(_msg.sender);
-    params.codeAddress = fromEvmC(_msg.destination);
+    params.codeAddress = fromEvmC(_msg.recipient);
     params.receiveAddress = _msg.kind == EVMC_CALL ? params.codeAddress : m_extVM.myAddress;
     params.data = {_msg.input_data, _msg.input_size};
     params.staticCall = (_msg.flags & EVMC_STATIC) != 0;
@@ -235,7 +248,7 @@ evmc::result EvmCHost::call(evmc_message const& _msg) noexcept
         // This is normal pattern when placement new operator is used.
         output.~bytes();
     };
-    return evmc::result{evmcResult};
+    return evmc::Result{evmcResult};
 }
 
 ExtVMFace::ExtVMFace(EnvInfo const& _envInfo, Address _myAddress, Address _caller, Address _origin,

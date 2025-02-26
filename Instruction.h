@@ -69,6 +69,7 @@ enum class Instruction : uint8_t
     GASLIMIT,         ///< get the block's gas limit
     CHAINID,          ///< get the network's ChainID
     SELFBALANCE,      ///< get balance of the current address
+    BASEFEE,          ///< get the block's base fee
 
     POP = 0x50,  ///< remove item from stack
     MLOAD,       ///< load word from memory
@@ -82,7 +83,7 @@ enum class Instruction : uint8_t
     MSIZE,       ///< get the size of active memory
     GAS,         ///< get the amount of available gas
     JUMPDEST,    ///< set a potential jump destination
-
+    PUSH0 = 0x5f,///< place the value 0 on stack
     PUSH1 = 0x60,  ///< place 1 byte item on stack
     PUSH2,         ///< place 2 byte item on stack
     PUSH3,         ///< place 3 byte item on stack

@@ -137,11 +137,13 @@ class McInfo
 {
 public:
     McInfo() = default;
-    McInfo(uint64_t const & bn, uint64_t const & mci_a, uint64_t const & mc_timestamp_a, uint64_t const & mc_last_summary_mci_a) :
+    McInfo(uint64_t const & bn, uint64_t const & mci_a, uint64_t const & mc_timestamp_a, uint64_t const & mc_last_summary_mci_a,
+        Address const& _author) :
         block_number(bn),
         mci(mci_a),
         mc_timestamp(mc_timestamp_a),
-        mc_last_summary_mci(mc_last_summary_mci_a)
+        mc_last_summary_mci(mc_last_summary_mci_a),
+        author(_author)
     {
     };
 
@@ -149,6 +151,7 @@ public:
     uint64_t mci;
     uint64_t mc_timestamp;
     uint64_t mc_last_summary_mci;
+    Address  author;
 };
 
 class EnvInfo
@@ -164,9 +167,11 @@ public:
     std::shared_ptr<mcp::iblock_cache> cache;
 
     uint64_t number() const { return m_mci_info.block_number; }
+    Address const& author() const { return m_mci_info.author; }
     uint64_t mci() const { return m_mci_info.mci; }
     uint64_t mc_timestamp() const { return m_mci_info.mc_timestamp; }
     uint64_t timestamp() const { return m_mci_info.mc_timestamp; }
+    uint64_t const& gasLimit() const { return mcp::tx_max_gas; }
     uint64_t mc_last_summary_mci() const { return m_mci_info.mc_last_summary_mci; }
 
     u256 const& chainID() const { return m_chainID; }
@@ -247,10 +252,11 @@ public:
     ///
     /// @param beneficiary  The address of the account which will receive ETH
     ///                     from the selfdestructed account.
-    virtual void selfdestruct(Address beneficiary)
+    virtual bool selfdestruct(Address beneficiary)
     {
         (void)beneficiary;
         sub.selfdestructs.insert(myAddress);
+        return true;
     }
 
     /// Create a new (contract) account.
@@ -317,10 +323,10 @@ public:
     size_t copy_code(const evmc::address& _addr, size_t _codeOffset, uint8_t* _bufferData,
         size_t _bufferSize) const noexcept override;
 
-    void selfdestruct(
+    bool selfdestruct(
         const evmc::address& _addr, const evmc::address& _beneficiary) noexcept override;
 
-    evmc::result call(const evmc_message& _msg) noexcept override;
+    evmc::Result call(const evmc_message& _msg) noexcept override;
 
     evmc_tx_context get_tx_context() const noexcept override;
 
@@ -329,8 +335,11 @@ public:
     void emit_log(const evmc::address& _addr, const uint8_t* _data, size_t _dataSize,
         const evmc::bytes32 _topics[], size_t _numTopics) noexcept override;
 
+    evmc_access_status access_account(const evmc::address& addr) noexcept override;
 private:
-    evmc::result create(evmc_message const& _msg) noexcept;
+    evmc_access_status access_storage(const evmc::address& addr, const evmc::bytes32& key) noexcept override;
+
+    evmc::Result create(evmc_message const& _msg) noexcept;
 
 private:
     ExtVMFace& m_extVM;

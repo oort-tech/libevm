@@ -14,6 +14,8 @@ namespace
 {
 evmc_revision toRevision(EVMSchedule const& _schedule) noexcept
 {
+    if (_schedule.havePush0)
+        return EVMC_SHANGHAI;
     if (_schedule.haveChainID)
         return EVMC_ISTANBUL;
     if (_schedule.haveCreate2 && !_schedule.eip1283Mode)
@@ -66,9 +68,9 @@ owning_bytes_ref EVMC::exec(u256& io_gas, ExtVMFace& _ext, const OnOpFunc& _onOp
 
     // TODO: The following checks should be removed by changing the types
     //       used for gas, block number and timestamp.
-    (void)int64max;
+    //(void)int64max;
     assert(io_gas <= int64max);
-    assert(_ext.envInfo().gasLimit() <= int64max);
+    //assert(_ext.envInfo().gasLimit() <= int64max);
     assert(_ext.depth <= static_cast<size_t>(std::numeric_limits<int32_t>::max()));
 
     auto gas = static_cast<int64_t>(io_gas);
