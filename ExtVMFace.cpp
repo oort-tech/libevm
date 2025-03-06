@@ -127,13 +127,13 @@ void EvmCHost::emit_log(evmc::address const& _addr, uint8_t const* _data, size_t
 
 evmc_access_status EvmCHost::access_account(const evmc::address& addr) noexcept
 {
-    //To expand, future implementation, eip2929
+    //To expand, future implementation, not support eip2929
     return evmc_access_status::EVMC_ACCESS_COLD;
 }
 
 evmc_access_status EvmCHost::access_storage(const evmc::address& addr, const evmc::bytes32& key) noexcept
 {
-    //To expand, future implementation, eip2929
+    //To expand, future implementation, not support eip2929
     return evmc_access_status::EVMC_ACCESS_COLD;
 }
 
@@ -148,7 +148,9 @@ evmc_tx_context EvmCHost::get_tx_context() const noexcept
     result.block_number = envInfo.number();
     result.block_timestamp = envInfo.timestamp();
     result.block_gas_limit = envInfo.gasLimit();
+    //Always 21000,all gas are burned, but don¡¯t know how much gas is consumed when BASEE is executed.
     result.block_base_fee = toEvmC(u256(m_extVM.evmSchedule().txGas));
+    /// do not support DIFFICULTY.
     // result.block_difficulty = toEvmC(envInfo.difficulty());
     result.chain_id = toEvmC(envInfo.chainID());
     return result;
