@@ -5,7 +5,7 @@
 #include "VMFactory.h"
 #include "EVMC.h"
 #include "LegacyVM.h"
-
+#include <libdevcore/Log.h>
 #include <libinterpreter/interpreter.h>
 
 #include <evmc/loader.h>

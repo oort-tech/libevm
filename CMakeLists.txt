@@ -9,6 +9,7 @@ set(sources
     LegacyVMOpt.cpp
     VMFace.h
     VMFactory.cpp VMFactory.h
+    Logger.h
 )
 
 add_library(evm ${sources})

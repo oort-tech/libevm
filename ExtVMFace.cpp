@@ -172,7 +172,7 @@ evmc::Result EvmCHost::create(evmc_message const& _msg) noexcept
     // ExtVM::create takes the sender address from .myAddress.
     assert(fromEvmC(_msg.sender) == m_extVM.myAddress);
 
-    CreateResult result = m_extVM.create(value, gas, init, opcode, salt, {});
+    CreateResult result = m_extVM.create(value, gas, init, opcode, salt, nullptr/*, {}*/);
     evmc_result evmcResult = {};
     evmcResult.status_code = result.status;
     evmcResult.gas_left = static_cast<int64_t>(gas);
@@ -223,7 +223,8 @@ evmc::Result EvmCHost::call(evmc_message const& _msg) noexcept
     params.receiveAddress = _msg.kind == EVMC_CALL ? params.codeAddress : m_extVM.myAddress;
     params.data = {_msg.input_data, _msg.input_size};
     params.staticCall = (_msg.flags & EVMC_STATIC) != 0;
-    params.onOp = {};
+    //params.onOp = {};
+    params.tracer = nullptr;
 
     CallResult result = m_extVM.call(params);
     evmc_result evmcResult = {};

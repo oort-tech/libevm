@@ -4,7 +4,7 @@
 #pragma once
 
 #include "Instruction.h"
-
+#include "Logger.h"
 #include <libdevcore/Common.h>
 #include <libdevcore/CommonData.h>
 #include <libdevcore/SHA3.h>
@@ -13,8 +13,9 @@
 #include <mcp/common/EVMSchedule.h>
 #include <mcp/common/utility.hpp>
 #include <mcp/core/log_entry.hpp>
-#include <mcp/core/block_store.hpp>
-#include <mcp/db/database.hpp>
+#include <mcp/core/config.hpp>
+//#include <mcp/core/block_store.hpp>
+//#include <mcp/db/database.hpp>
 
 #include <evmc/evmc.hpp>
 
@@ -22,10 +23,10 @@
 #include <functional>
 #include <set>
 
-namespace mcp
-{
-    class iblock_cache;
-}
+//namespace mcp
+//{
+//    class iblock_cache;
+//}
 
 namespace dev
 {
@@ -103,15 +104,16 @@ class ExtVMFace;
 class LastBlockHashesFace;
 class VMFace;
 
-using OnOpFunc = std::function<void(uint64_t /*steps*/, uint64_t /* PC */, Instruction /*instr*/,
-    bigint /*newMemSize*/, bigint /*gasCost*/, bigint /*gas*/, VMFace const*, ExtVMFace const*)>;
+//using OnOpFunc = std::function<void(uint64_t /*steps*/, uint64_t /* PC */, Instruction /*instr*/,
+//    bigint /*newMemSize*/, bigint /*gasCost*/, bigint /*gas*/, VMFace const*, ExtVMFace const*)>;
 
 struct CallParameters
 {
     CallParameters() = default;
     CallParameters(Address _senderAddress, Address _codeAddress, Address _receiveAddress,
         u256 _valueTransfer, u256 _apparentValue, u256 _gas, bytesConstRef _data,
-        OnOpFunc _onOpFunc)
+        //OnOpFunc _onOpFunc,
+        std::shared_ptr<EVMLogger> _tracer)
       : senderAddress(_senderAddress),
         codeAddress(_codeAddress),
         receiveAddress(_receiveAddress),
@@ -119,7 +121,8 @@ struct CallParameters
         apparentValue(_apparentValue),
         gas(_gas),
         data(_data),
-        onOp(_onOpFunc)
+        //onOp(_onOpFunc),
+        tracer(_tracer)
     {}
     Address senderAddress;
     Address codeAddress;
@@ -130,7 +133,8 @@ struct CallParameters
     bytesConstRef data;
     bool staticCall = false;
     std::shared_ptr<Instruction> op;
-    OnOpFunc onOp;
+    //OnOpFunc onOp;
+    std::shared_ptr<EVMLogger> tracer;
 };
 
 class McInfo
@@ -146,6 +150,27 @@ public:
         author(_author)
     {
     };
+    /// Copy state object.
+    McInfo(McInfo const& _mc):
+        block_number(_mc.block_number),
+        mci(_mc.mci),
+        mc_timestamp(_mc.mc_timestamp),
+        mc_last_summary_mci(_mc.mc_last_summary_mci),
+        author(_mc.author)
+    {}
+
+    /// Copy state object.
+    McInfo& operator=(McInfo const& _mc)
+    {
+        if (&_mc == this)
+            return *this;
+        block_number = _mc.block_number;
+        mci = _mc.mci;
+        mc_timestamp = _mc.mc_timestamp;
+        mc_last_summary_mci = _mc.mc_last_summary_mci;
+        author = _mc.author;
+        return *this;
+    }
 
     uint64_t block_number;
     uint64_t mci;
@@ -157,19 +182,19 @@ public:
 class EnvInfo
 {
 public:
-    EnvInfo(mcp::db::db_transaction & transaction_a, mcp::block_store & store_a, std::shared_ptr<mcp::iblock_cache> cache_a, McInfo const & mci_info_a,
+    EnvInfo(/*mcp::db::db_transaction & transaction_a, mcp::block_store & store_a, std::shared_ptr<mcp::iblock_cache> cache_a,*/ McInfo const & mci_info_a,
         u256 const& _chainID)
-    :transaction(transaction_a), store(store_a),cache(cache_a), m_mci_info(mci_info_a), m_chainID(_chainID)
+    :/*transaction(transaction_a), store(store_a),cache(cache_a), */m_mci_info(mci_info_a), m_chainID(_chainID)
     {};
 
-    mcp::db::db_transaction & transaction;
-    mcp::block_store& store;
-    std::shared_ptr<mcp::iblock_cache> cache;
+    //mcp::db::db_transaction & transaction;
+    //mcp::block_store& store;
+    //std::shared_ptr<mcp::iblock_cache> cache;
 
     uint64_t number() const { return m_mci_info.block_number; }
     Address const& author() const { return m_mci_info.author; }
     uint64_t mci() const { return m_mci_info.mci; }
-    uint64_t mc_timestamp() const { return m_mci_info.mc_timestamp; }
+    //uint64_t mc_timestamp() const { return m_mci_info.mc_timestamp; }
     uint64_t timestamp() const { return m_mci_info.mc_timestamp; }
     uint64_t const& gasLimit() const { return mcp::tx_max_gas; }
     uint64_t mc_last_summary_mci() const { return m_mci_info.mc_last_summary_mci; }
@@ -260,7 +285,7 @@ public:
     }
 
     /// Create a new (contract) account.
-    virtual CreateResult create(u256, u256&, bytesConstRef, Instruction, u256, OnOpFunc const&) = 0;
+    virtual CreateResult create(u256, u256&, bytesConstRef, Instruction, u256, std::shared_ptr<EVMLogger> _tracer/*, OnOpFunc const&*/) = 0;
 
     /// Make a new message call.
     virtual CallResult call(CallParameters&) = 0;
