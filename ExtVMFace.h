@@ -141,12 +141,12 @@ class McInfo
 {
 public:
     McInfo() = default;
-    McInfo(uint64_t const & bn, uint64_t const & mci_a, uint64_t const & mc_timestamp_a, uint64_t const & mc_last_summary_mci_a,
+    McInfo(uint64_t const & bn, uint64_t const & mci_a, uint64_t const & mc_timestamp_a, /*uint64_t const & mc_last_summary_mci_a,*/
         Address const& _author) :
         block_number(bn),
         mci(mci_a),
         mc_timestamp(mc_timestamp_a),
-        mc_last_summary_mci(mc_last_summary_mci_a),
+        //mc_last_summary_mci(mc_last_summary_mci_a),
         author(_author)
     {
     };
@@ -155,7 +155,7 @@ public:
         block_number(_mc.block_number),
         mci(_mc.mci),
         mc_timestamp(_mc.mc_timestamp),
-        mc_last_summary_mci(_mc.mc_last_summary_mci),
+        //mc_last_summary_mci(_mc.mc_last_summary_mci),
         author(_mc.author)
     {}
 
@@ -167,7 +167,7 @@ public:
         block_number = _mc.block_number;
         mci = _mc.mci;
         mc_timestamp = _mc.mc_timestamp;
-        mc_last_summary_mci = _mc.mc_last_summary_mci;
+        //mc_last_summary_mci = _mc.mc_last_summary_mci;
         author = _mc.author;
         return *this;
     }
@@ -175,29 +175,24 @@ public:
     uint64_t block_number;
     uint64_t mci;
     uint64_t mc_timestamp;
-    uint64_t mc_last_summary_mci;
+    //uint64_t mc_last_summary_mci;
     Address  author;
 };
 
 class EnvInfo
 {
 public:
-    EnvInfo(/*mcp::db::db_transaction & transaction_a, mcp::block_store & store_a, std::shared_ptr<mcp::iblock_cache> cache_a,*/ McInfo const & mci_info_a,
+    EnvInfo(McInfo const & mci_info_a,
         u256 const& _chainID)
-    :/*transaction(transaction_a), store(store_a),cache(cache_a), */m_mci_info(mci_info_a), m_chainID(_chainID)
+    :m_mci_info(mci_info_a), m_chainID(_chainID)
     {};
-
-    //mcp::db::db_transaction & transaction;
-    //mcp::block_store& store;
-    //std::shared_ptr<mcp::iblock_cache> cache;
 
     uint64_t number() const { return m_mci_info.block_number; }
     Address const& author() const { return m_mci_info.author; }
     uint64_t mci() const { return m_mci_info.mci; }
-    //uint64_t mc_timestamp() const { return m_mci_info.mc_timestamp; }
     uint64_t timestamp() const { return m_mci_info.mc_timestamp; }
     uint64_t const& gasLimit() const { return mcp::tx_max_gas; }
-    uint64_t mc_last_summary_mci() const { return m_mci_info.mc_last_summary_mci; }
+    //uint64_t mc_last_summary_mci() const { return m_mci_info.mc_last_summary_mci; }
 
     u256 const& chainID() const { return m_chainID; }
 
