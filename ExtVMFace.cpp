@@ -237,6 +237,8 @@ evmc::Result EvmCHost::call(evmc_message const& _msg) noexcept
     case EVMC_DELEGATECALL:
         params.op = Instruction::DELEGATECALL;
         break;
+    default:
+        break;
     }
     params.tracer = m_extVM.getTracer();
 
