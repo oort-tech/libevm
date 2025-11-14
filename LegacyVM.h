@@ -16,7 +16,7 @@ namespace eth
 class LegacyVM: public VMFace
 {
 public:
-    virtual owning_bytes_ref exec(u256& _io_gas, ExtVMFace& _ext, std::shared_ptr<EVMLogger> _tracer/*, OnOpFunc const& _onOp*/) override final;
+    virtual owning_bytes_ref exec(u256& _io_gas, ExtVMFace& _ext, std::shared_ptr<EVMLogger> _tracer) override final;
 
 #if EIP_615
     // invalid code will throw an exeption
@@ -36,7 +36,6 @@ private:
     u256* m_io_gas_p = 0;
     uint64_t m_io_gas = 0;
     ExtVMFace* m_ext = 0;
-    //OnOpFunc m_onOp;
     std::shared_ptr<EVMLogger> m_tracer;
 
     static std::array<InstructionMetric, 256> c_metrics;

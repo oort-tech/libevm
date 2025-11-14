@@ -59,7 +59,7 @@ EVMC::EVMC(evmc_vm* _vm) noexcept : evmc::VM(_vm)
     }
 }
 
-owning_bytes_ref EVMC::exec(u256& io_gas, ExtVMFace& _ext, std::shared_ptr<EVMLogger> _tracer/*, const OnOpFunc& _onOp*/)
+owning_bytes_ref EVMC::exec(u256& io_gas, ExtVMFace& _ext, std::shared_ptr<EVMLogger> _tracer)
 {
     assert(_ext.envInfo().number() >= 0);
     assert(_ext.envInfo().timestamp() >= 0);
@@ -122,7 +122,7 @@ owning_bytes_ref EVMC::exec(u256& io_gas, ExtVMFace& _ext, std::shared_ptr<EVMLo
 
     case EVMC_REJECTED:
         cwarn << "Execution rejected by EVMC, executing with default VM implementation";
-        return VMFactory::create(VMKind::Legacy)->exec(io_gas, _ext, _tracer/*, _onOp*/);
+        return VMFactory::create(VMKind::Legacy)->exec(io_gas, _ext, _tracer);
 
     case EVMC_INTERNAL_ERROR:
     default:

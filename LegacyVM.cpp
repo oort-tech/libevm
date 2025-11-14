@@ -60,10 +60,6 @@ uint64_t LegacyVM::decodeJumpvDest(const byte* const _code, uint64_t& _pc, byte 
 //
 void LegacyVM::onOperation(Instruction _instr)
 {
-    //if (m_onOp)
-    //    (m_onOp)(++m_nSteps, m_PC, _instr,
-    //        m_newMemSize > m_mem.size() ? (m_newMemSize - m_mem.size()) / 32 : uint64_t(0),
-    //        m_runGas, m_io_gas, this, m_ext);
     if (m_tracer)
         m_tracer->CaptureState(m_PC, _instr, m_runGas, m_io_gas, this, m_ext);
 }
@@ -209,13 +205,12 @@ void LegacyVM::fetchInstruction()
 //
 // interpreter entry point
 
-owning_bytes_ref LegacyVM::exec(u256& _io_gas, ExtVMFace& _ext, std::shared_ptr<EVMLogger> _tracer/*, OnOpFunc const& _onOp*/)
+owning_bytes_ref LegacyVM::exec(u256& _io_gas, ExtVMFace& _ext, std::shared_ptr<EVMLogger> _tracer)
 {
     m_io_gas_p = &_io_gas;
     m_io_gas = uint64_t(_io_gas);
     m_ext = &_ext;
     m_schedule = &m_ext->evmSchedule();
-    //m_onOp = _onOp;
     m_tracer = _tracer;
     m_onFail = &LegacyVM::onOperation; // this results in operations that fail being logged twice in the trace
     m_PC = 0;

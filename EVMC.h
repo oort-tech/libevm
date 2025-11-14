@@ -16,7 +16,7 @@ class EVMC : public evmc::VM, public VMFace
 public:
     explicit EVMC(evmc_vm* _vm) noexcept;
 
-    owning_bytes_ref exec(u256& io_gas, ExtVMFace& _ext, std::shared_ptr<EVMLogger> _tracer/*, OnOpFunc const& _onOp*/) final;
+    owning_bytes_ref exec(u256& io_gas, ExtVMFace& _ext, std::shared_ptr<EVMLogger> _tracer) final;
 };
 }  // namespace eth
 }  // namespace dev

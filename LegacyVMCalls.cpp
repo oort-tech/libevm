@@ -139,7 +139,7 @@ void LegacyVM::caseCreate()
         bytesConstRef initCode{m_mem.data() + off, size};
 
 
-        CreateResult result = m_ext->create(endowment, gas, initCode, m_OP, salt, m_tracer/*, m_onOp*/);
+        CreateResult result = m_ext->create(endowment, gas, initCode, m_OP, salt, m_tracer);
         m_SPP[0] = (u160)result.address;  // Convert address to integer.
         m_returnData = result.output.toBytes();
 
@@ -190,7 +190,7 @@ bool LegacyVM::caseCallSetup(CallParameters *callParams, bytesRef& o_output)
     assert(callParams->valueTransfer == 0);
     assert(callParams->apparentValue == 0);
 
-    callParams->op = std::make_shared<Instruction>(m_OP);
+    callParams->op = m_OP;
 
     callParams->staticCall = (m_OP == Instruction::STATICCALL || m_ext->staticCall);
     auto const destinationAddr = asAddress(m_SP[1]);
@@ -259,7 +259,6 @@ bool LegacyVM::caseCallSetup(CallParameters *callParams, bytesRef& o_output)
 
     if (m_ext->balance(m_ext->myAddress) >= callParams->valueTransfer && m_ext->depth < 1024)
     {
-        //callParams->onOp = m_onOp;
         callParams->tracer = m_tracer;
         callParams->senderAddress = m_OP == Instruction::DELEGATECALL ? m_ext->caller : m_ext->myAddress;
         callParams->receiveAddress = (m_OP == Instruction::CALL || m_OP == Instruction::STATICCALL) ? callParams->codeAddress : m_ext->myAddress;

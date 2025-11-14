@@ -172,7 +172,7 @@ evmc::Result EvmCHost::create(evmc_message const& _msg) noexcept
     // ExtVM::create takes the sender address from .myAddress.
     assert(fromEvmC(_msg.sender) == m_extVM.myAddress);
 
-    CreateResult result = m_extVM.create(value, gas, init, opcode, salt, nullptr/*, {}*/);
+    CreateResult result = m_extVM.create(value, gas, init, opcode, salt, m_extVM.getTracer());
     evmc_result evmcResult = {};
     evmcResult.status_code = result.status;
     evmcResult.gas_left = static_cast<int64_t>(gas);
@@ -223,8 +223,22 @@ evmc::Result EvmCHost::call(evmc_message const& _msg) noexcept
     params.receiveAddress = _msg.kind == EVMC_CALL ? params.codeAddress : m_extVM.myAddress;
     params.data = {_msg.input_data, _msg.input_size};
     params.staticCall = (_msg.flags & EVMC_STATIC) != 0;
-    //params.onOp = {};
-    params.tracer = nullptr;
+    switch (_msg.kind)
+    {
+    case EVMC_CALL:
+        if (params.staticCall)
+            params.op = Instruction::STATICCALL;
+        else
+            params.op = Instruction::CALL;
+        break;
+    case EVMC_CALLCODE:
+        params.op = Instruction::CALLCODE;
+        break;
+    case EVMC_DELEGATECALL:
+        params.op = Instruction::DELEGATECALL;
+        break;
+    }
+    params.tracer = m_extVM.getTracer();
 
     CallResult result = m_extVM.call(params);
     evmc_result evmcResult = {};
@@ -256,7 +270,8 @@ evmc::Result EvmCHost::call(evmc_message const& _msg) noexcept
 
 ExtVMFace::ExtVMFace(EnvInfo const& _envInfo, Address _myAddress, Address _caller, Address _origin,
     u256 _value, u256 _gasPrice, bytesConstRef _data, bytes _code, h256 const& _codeHash,
-    u256 const& _version, unsigned _depth, bool _isCreate, bool _staticCall)
+    u256 const& _version, unsigned _depth, bool _isCreate, bool _staticCall,
+    std::shared_ptr<EVMLogger> _tracer)
   : m_envInfo(_envInfo),
     myAddress(_myAddress),
     caller(_caller),
@@ -269,7 +284,8 @@ ExtVMFace::ExtVMFace(EnvInfo const& _envInfo, Address _myAddress, Address _calle
     version(_version),
     depth(_depth),
     isCreate(_isCreate),
-    staticCall(_staticCall)
+    staticCall(_staticCall),
+    tracer(_tracer)
 {}
 
 }  // namespace eth

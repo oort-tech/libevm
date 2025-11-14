@@ -104,15 +104,11 @@ class ExtVMFace;
 class LastBlockHashesFace;
 class VMFace;
 
-//using OnOpFunc = std::function<void(uint64_t /*steps*/, uint64_t /* PC */, Instruction /*instr*/,
-//    bigint /*newMemSize*/, bigint /*gasCost*/, bigint /*gas*/, VMFace const*, ExtVMFace const*)>;
-
 struct CallParameters
 {
     CallParameters() = default;
     CallParameters(Address _senderAddress, Address _codeAddress, Address _receiveAddress,
         u256 _valueTransfer, u256 _apparentValue, u256 _gas, bytesConstRef _data,
-        //OnOpFunc _onOpFunc,
         std::shared_ptr<EVMLogger> _tracer)
       : senderAddress(_senderAddress),
         codeAddress(_codeAddress),
@@ -121,7 +117,6 @@ struct CallParameters
         apparentValue(_apparentValue),
         gas(_gas),
         data(_data),
-        //onOp(_onOpFunc),
         tracer(_tracer)
     {}
     Address senderAddress;
@@ -132,8 +127,7 @@ struct CallParameters
     u256 gas;
     bytesConstRef data;
     bool staticCall = false;
-    std::shared_ptr<Instruction> op;
-    //OnOpFunc onOp;
+    Instruction op;
     std::shared_ptr<EVMLogger> tracer;
 };
 
@@ -237,7 +231,8 @@ public:
     /// Full constructor.
     ExtVMFace(EnvInfo const& _envInfo, Address _myAddress, Address _caller, Address _origin,
         u256 _value, u256 _gasPrice, bytesConstRef _data, bytes _code, h256 const& _codeHash,
-        u256 const& _version, unsigned _depth, bool _isCreate, bool _staticCall);
+        u256 const& _version, unsigned _depth, bool _isCreate, bool _staticCall,
+        std::shared_ptr<EVMLogger> _tracer);
 
     ExtVMFace(ExtVMFace const&) = delete;
     ExtVMFace& operator=(ExtVMFace const&) = delete;
@@ -246,6 +241,9 @@ public:
 
     /// Read storage location.
     virtual u256 store(u256) { return 0; }
+
+    /// Read storage location at the given address.
+    virtual u256 store(Address, u256) { return 0; }
 
     /// Write a value in storage.
     virtual void setStore(u256, u256) {}
@@ -280,7 +278,7 @@ public:
     }
 
     /// Create a new (contract) account.
-    virtual CreateResult create(u256, u256&, bytesConstRef, Instruction, u256, std::shared_ptr<EVMLogger> _tracer/*, OnOpFunc const&*/) = 0;
+    virtual CreateResult create(u256, u256&, bytesConstRef, Instruction, u256, std::shared_ptr<EVMLogger> _tracer) = 0;
 
     /// Make a new message call.
     virtual CallResult call(CallParameters&) = 0;
@@ -300,6 +298,7 @@ public:
     /// Return the EVM gas-price schedule for this execution context.
     virtual EVMSchedule const& evmSchedule() const { return DefaultSchedule; }
 
+    std::shared_ptr<EVMLogger> getTracer() { return tracer; };
 private:
     EnvInfo const& m_envInfo;
 
@@ -319,6 +318,8 @@ public:
     unsigned depth = 0;       ///< Depth of the present call.
     bool isCreate = false;    ///< Is this a CREATE call?
     bool staticCall = false;  ///< Throw on state changing.
+
+    std::shared_ptr<EVMLogger> tracer = nullptr;
 };
 
 class EvmCHost : public evmc::Host
@@ -356,6 +357,8 @@ public:
         const evmc::bytes32 _topics[], size_t _numTopics) noexcept override;
 
     evmc_access_status access_account(const evmc::address& addr) noexcept override;
+
+    ExtVMFace& getExtVM() { return m_extVM; }
 private:
     evmc_access_status access_storage(const evmc::address& addr, const evmc::bytes32& key) noexcept override;
 
