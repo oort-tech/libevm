@@ -8,25 +8,15 @@
 #include <libdevcore/Common.h>
 #include <libdevcore/CommonData.h>
 #include <libdevcore/SHA3.h>
-
 #include <mcp/common/numbers.hpp>
 #include <mcp/common/EVMSchedule.h>
 #include <mcp/common/utility.hpp>
 #include <mcp/core/log_entry.hpp>
 #include <mcp/core/config.hpp>
-//#include <mcp/core/block_store.hpp>
-//#include <mcp/db/database.hpp>
-
 #include <evmc/evmc.hpp>
-
 #include <boost/optional.hpp>
 #include <functional>
 #include <set>
-
-//namespace mcp
-//{
-//    class iblock_cache;
-//}
 
 namespace dev
 {
@@ -135,12 +125,11 @@ class McInfo
 {
 public:
     McInfo() = default;
-    McInfo(uint64_t const & bn, uint64_t const & mci_a, uint64_t const & mc_timestamp_a, /*uint64_t const & mc_last_summary_mci_a,*/
+    McInfo(uint64_t const & bn, uint64_t const & mci_a, uint64_t const & mc_timestamp_a,
         Address const& _author) :
         block_number(bn),
         mci(mci_a),
         mc_timestamp(mc_timestamp_a),
-        //mc_last_summary_mci(mc_last_summary_mci_a),
         author(_author)
     {
     };
@@ -149,7 +138,6 @@ public:
         block_number(_mc.block_number),
         mci(_mc.mci),
         mc_timestamp(_mc.mc_timestamp),
-        //mc_last_summary_mci(_mc.mc_last_summary_mci),
         author(_mc.author)
     {}
 
@@ -161,7 +149,6 @@ public:
         block_number = _mc.block_number;
         mci = _mc.mci;
         mc_timestamp = _mc.mc_timestamp;
-        //mc_last_summary_mci = _mc.mc_last_summary_mci;
         author = _mc.author;
         return *this;
     }
@@ -169,7 +156,6 @@ public:
     uint64_t block_number;
     uint64_t mci;
     uint64_t mc_timestamp;
-    //uint64_t mc_last_summary_mci;
     Address  author;
 };
 
@@ -186,7 +172,6 @@ public:
     uint64_t mci() const { return m_mci_info.mci; }
     uint64_t timestamp() const { return m_mci_info.mc_timestamp; }
     uint64_t const& gasLimit() const { return mcp::tx_max_gas; }
-    //uint64_t mc_last_summary_mci() const { return m_mci_info.mc_last_summary_mci; }
 
     u256 const& chainID() const { return m_chainID; }
 
